@@ -1,0 +1,30 @@
+fsspec_fuse
+===========
+
+.. py:module:: fsspec_fuse
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/fsspec_fuse/fsspec_fuse/index
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   fsspec_fuse.__version__
+
+
+Package Contents
+----------------
+
+.. py:data:: __version__
+   :value: '0.1.0'
+
+

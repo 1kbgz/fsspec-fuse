@@ -1,0 +1,19 @@
+fsspec_fuse.fsspec_fuse
+=======================
+
+.. py:module:: fsspec_fuse.fsspec_fuse
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   fsspec_fuse.fsspec_fuse.Example
+
+
+Module Contents
+---------------
+
+.. py:class:: Example(value: str)
+
