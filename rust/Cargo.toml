@@ -1,0 +1,17 @@
+[package]
+name = "fsspec_fuse"
+version = "0.1.0"
+authors = ["the fsspec-fuse authors <dev@1kbgz.com>"]
+edition = "2021"
+license = "Apache-2.0"
+readme = "../README.md"
+repository = "https://github.com/1kbgz/fsspec-fuse"
+description = "Mount fsspec filesystems with FUSE"
+
+[lib]
+name = "fsspec_fuse"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
+[dependencies]
+

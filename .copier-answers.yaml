@@ -1,0 +1,14 @@
+# Changes here will be overwritten by Copier
+_commit: cfd7b6e
+_src_path: https://github.com/python-project-templates/base.git
+add_c_abi: false
+add_docs: true
+add_extension: rust
+add_pyodide: false
+add_wiki: false
+email: dev@1kbgz.com
+github: 1kbgz
+project_description: Mount fsspec filesystems with FUSE
+project_name: fsspec-fuse
+python_version_primary: '3.11'
+team: the fsspec-fuse authors
