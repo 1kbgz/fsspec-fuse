@@ -46,11 +46,6 @@ jobs:
             os: macos-26
             python: "3.11"
             target: native
-          - name: windows-2025
-            dist_path: dist
-            os: windows-2025
-            python: "3.11"
-            target: native
           
 
     steps:
@@ -66,6 +61,18 @@ jobs:
 
       - name: Setup Rust
         uses: actions-ext/rust/setup@af6343171cd1a86c4183da96de7eb96e15599662
+
+      - name: Install FUSE (Linux)
+        run: sudo apt-get update && sudo apt-get install -y fuse3
+        if: runner.os == 'Linux'
+
+      # fuser links libfuse from macFUSE. Hosted runners cannot load its kernel
+      # extension, so mount tests skip there.
+      - name: Install macFUSE (macOS)
+        run: |
+          brew install --cask macfuse
+          echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> "$GITHUB_ENV"
+        if: runner.os == 'macOS'
 
       - name: Install dependencies
         run: make develop
@@ -139,7 +146,7 @@ jobs:
           CIBW_ARCHS_LINUX: native
         if: matrix.name == 'ubuntu-24.04-arm'
 
-      - name: Build distributions (macOS/Windows)
+      - name: Build distributions (macOS)
         run: |
           rm -rf dist
           make dist-py-wheel
