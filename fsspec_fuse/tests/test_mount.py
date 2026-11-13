@@ -1,7 +1,9 @@
 import errno
 import os
 import shutil
+import subprocess
 import sys
+import time
 import uuid
 
 import fsspec
@@ -129,6 +131,22 @@ def test_unmount_and_context_manager(tmp_path):
         assert os.listdir(point) == ["a.txt"]
     assert not session.mounted
     assert os.listdir(point) == []
+    session.unmount()
+
+
+@pytest.mark.skipif(sys.platform != "linux" or not _fuse_available(), reason="needs fusermount3")
+def test_unmount_after_an_external_unmount(tmp_path):
+    source = tmp_path / "source"
+    source.mkdir()
+    point = tmp_path / "mnt"
+    point.mkdir()
+    session = mount(f"file://{source}", point)
+    subprocess.run(["fusermount3", "-u", str(point)], check=True)
+    for _ in range(50):
+        if not session.mounted:
+            break
+        time.sleep(0.1)
+    assert not session.mounted
     session.unmount()
 
 
