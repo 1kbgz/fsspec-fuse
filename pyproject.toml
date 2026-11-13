@@ -232,6 +232,13 @@ section-order = [
 [tool.yardang]
 title = "fsspec-fuse"
 root = "README.md"
-pages = []
-use-autoapi = true
+pages = [
+    "docs/src/tutorial.md",
+    "docs/src/how-to.md",
+    "docs/src/cli.md",
+    "docs/src/api.md",
+    "docs/src/mounts.md",
+    "docs/src/explanation.md",
+]
+use-autoapi = false
 
