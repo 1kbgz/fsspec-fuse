@@ -40,6 +40,9 @@ impl RustMount {
             .unwrap_or_else(PoisonError::into_inner)
             .take();
         match session {
+            // Unmounted from outside, for example with fusermount3 -u: only wait for the
+            // session threads, since unmounting again fails.
+            Some(session) if session.guard.is_finished() => Ok(py.detach(|| session.join())?),
             Some(session) => Ok(py.detach(|| session.umount_and_join())?),
             None => Ok(()),
         }
