@@ -6,6 +6,18 @@ hidden: true
 
 
 
+docs/src/tutorial.md
+
+docs/src/how-to.md
+
+docs/src/cli.md
+
+docs/src/api.md
+
+docs/src/mounts.md
+
+docs/src/explanation.md
+
 
 ```
 
@@ -55,6 +67,17 @@ serves at once (default 4).
 - Windows is not supported yet.
 
 Mounts are read-only. Writes, creating files, and renames fail with `EROFS`.
+
+## Documentation
+
+Start with [Mount a directory and read it](docs/src/tutorial.md).
+[Mount a remote filesystem](docs/src/how-to.md) covers S3, Python-only backends,
+concurrency, and stale mounts.
+
+Look up the [command line](docs/src/cli.md), the [Python API](docs/src/api.md), or
+[mount behavior](docs/src/mounts.md) such as attributes and error codes.
+[How one mount reaches Rust and Python backends](docs/src/explanation.md) covers the
+design and its costs.
 
 > [!NOTE]
 > This library was generated using [copier](https://copier.readthedocs.io/en/stable/) from the [Base Python Project Template repository](https://github.com/python-project-templates/base).
