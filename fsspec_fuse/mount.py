@@ -24,9 +24,12 @@ class Mount:
 
     @property
     def mounted(self) -> bool:
+        """Whether the filesystem is still mounted. False after ``unmount()`` or an
+        unmount from outside, such as ``fusermount3 -u``."""
         return self._session.mounted
 
     def unmount(self) -> None:
+        """Unmount and wait for the mount's threads to stop. Calling it again does nothing."""
         self._session.unmount()
 
     def __enter__(self) -> Self:
