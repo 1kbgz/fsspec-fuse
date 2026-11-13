@@ -9,11 +9,32 @@ Classes
 
 .. autoapisummary::
 
-   fsspec_fuse.fsspec_fuse.Example
+   fsspec_fuse.fsspec_fuse.RustMount
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   fsspec_fuse.fsspec_fuse.mount
+   fsspec_fuse.fsspec_fuse.linked_to_libfsspec
 
 
 Module Contents
 ---------------
 
-.. py:class:: Example(value: str)
+.. py:class:: RustMount
+
+   .. py:property:: mounted
+      :type: bool
+
+
+
+   .. py:method:: unmount() -> None
+
+
+.. py:function:: mount(url: str, mountpoint: str | os.PathLike[str], storage_options: dict[str, str] | None = None, threads: int = 4) -> RustMount
+
+.. py:function:: linked_to_libfsspec() -> bool
 

@@ -27,8 +27,8 @@
     <script src="../../_static/js/custom.js?v=956e5d78"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="fsspec_fuse.fsspec_fuse" href="fsspec_fuse/index.html" />
-    <link rel="prev" title="test_all" href="../test_all/index.html" />
+    <link rel="next" title="fsspec_fuse.cli" href="cli/index.html" />
+    <link rel="prev" title="test_mount" href="../test_mount/index.html" />
     <script>
       (function () {
         var root = document.documentElement;
@@ -93,6 +93,11 @@
     </a>
   </li>
   <li class="fd-tree-item">
+    <a class="fd-link" href="../test_mount/index.html">
+      <span class="fd-link-text">test_mount</span>
+    </a>
+  </li>
+  <li class="fd-tree-item">
     <details class="fd-folder" open>
       <summary class="fd-folder-summary" title="Toggle section: fsspec_fuse">
         <a class="fd-link fd-current" href="#">
@@ -103,8 +108,18 @@
       
 <ul class="fd-tree">
   <li class="fd-tree-item">
+    <a class="fd-link" href="cli/index.html">
+      <span class="fd-link-text">fsspec_fuse.cli</span>
+    </a>
+  </li>
+  <li class="fd-tree-item">
     <a class="fd-link" href="fsspec_fuse/index.html">
       <span class="fd-link-text">fsspec_fuse.fsspec_fuse</span>
+    </a>
+  </li>
+  <li class="fd-tree-item">
+    <a class="fd-link" href="mount/index.html">
+      <span class="fd-link-text">fsspec_fuse.mount</span>
     </a>
   </li>
 </ul>
@@ -138,13 +153,46 @@
     <a href="#submodules">Submodules</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
-    <a href="#attributes">Attributes</a>
+    <a href="#classes">Classes</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
+    <a href="#functions">Functions</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
     <a href="#package-contents">Package Contents</a>
   </li>
   <li class="fd-toc-item" data-depth="2">
-    <a href="#fsspec_fuse.__version__">__version__</a>
+    <a href="#fsspec_fuse.linked_to_libfsspec">linked_to_libfsspec()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="2">
+    <a href="#fsspec_fuse.Mount">Mount</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.url">Mount.url</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.mountpoint">Mount.mountpoint</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount._session">Mount._session</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.mounted">Mount.mounted</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.unmount">Mount.unmount()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.__enter__">Mount.__enter__()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.__exit__">Mount.__exit__()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.__repr__">Mount.__repr__()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="2">
+    <a href="#fsspec_fuse.mount">mount()</a>
   </li>
 </ul>
 </div>
@@ -168,26 +216,98 @@
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="cli/index.html">fsspec_fuse.cli</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fsspec_fuse/index.html">fsspec_fuse.fsspec_fuse</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mount/index.html">fsspec_fuse.mount</a></li>
 </ul>
 </div>
 </section>
-<section id="attributes">
-<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#fsspec_fuse.__version__" title="fsspec_fuse.__version__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__version__</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#fsspec_fuse.Mount" title="fsspec_fuse.Mount"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Mount</span></code></a></p></td>
+<td><p>A read-only mount of an fsspec URL. Unmounts on <code class="docutils literal notranslate"><span class="pre">unmount()</span></code>, on context exit,</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#fsspec_fuse.linked_to_libfsspec" title="fsspec_fuse.linked_to_libfsspec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linked_to_libfsspec</span></code></a>() → bool</p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mount/index.html#module-fsspec_fuse.mount" title="fsspec_fuse.mount"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mount</span></code></a>(url, mountpoint, *[, threads]) → Mount</p></td>
+<td><p>Mount <code class="docutils literal notranslate"><span class="pre">url</span></code> read-only at the existing directory <code class="docutils literal notranslate"><span class="pre">mountpoint</span></code>.</p></td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="package-contents">
 <h2>Package Contents<a class="headerlink" href="#package-contents" title="Link to this heading">¶</a></h2>
-<dl class="py data">
-<dt class="sig sig-object py" id="fsspec_fuse.__version__">
-<span class="sig-prename descclassname"><span class="pre">fsspec_fuse.</span></span><span class="sig-name descname"><span class="pre">__version__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'0.1.0'</span></em><a class="headerlink" href="#fsspec_fuse.__version__" title="Link to this definition">¶</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="fsspec_fuse.linked_to_libfsspec">
+<span class="sig-prename descclassname"><span class="pre">fsspec_fuse.</span></span><span class="sig-name descname"><span class="pre">linked_to_libfsspec</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#fsspec_fuse.linked_to_libfsspec" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fsspec_fuse.Mount">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fsspec_fuse.</span></span><span class="sig-name descname"><span class="pre">Mount</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mountpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="fsspec_fuse/index.html#fsspec_fuse.fsspec_fuse.RustMount" title="fsspec_fuse.fsspec_fuse.RustMount"><span class="pre">fsspec_fuse.fsspec_fuse.RustMount</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/fsspec_fuse/mount.html#Mount"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fsspec_fuse.Mount" title="Link to this definition">¶</a></dt>
+<dd><p>A read-only mount of an fsspec URL. Unmounts on <code class="docutils literal notranslate"><span class="pre">unmount()</span></code>, on context exit,
+or when garbage collected.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fsspec_fuse.Mount.url">
+<span class="sig-name descname"><span class="pre">url</span></span><a class="headerlink" href="#fsspec_fuse.Mount.url" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fsspec_fuse.Mount.mountpoint">
+<span class="sig-name descname"><span class="pre">mountpoint</span></span><a class="headerlink" href="#fsspec_fuse.Mount.mountpoint" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="fsspec_fuse.Mount._session">
+<span class="sig-name descname"><span class="pre">_session</span></span><a class="headerlink" href="#fsspec_fuse.Mount._session" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fsspec_fuse.Mount.mounted">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mounted</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#fsspec_fuse.Mount.mounted" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fsspec_fuse.Mount.unmount">
+<span class="sig-name descname"><span class="pre">unmount</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/fsspec_fuse/mount.html#Mount.unmount"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fsspec_fuse.Mount.unmount" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fsspec_fuse.Mount.__enter__">
+<span class="sig-name descname"><span class="pre">__enter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../../_modules/fsspec_fuse/mount.html#Mount.__enter__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fsspec_fuse.Mount.__enter__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fsspec_fuse.Mount.__exit__">
+<span class="sig-name descname"><span class="pre">__exit__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/fsspec_fuse/mount.html#Mount.__exit__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fsspec_fuse.Mount.__exit__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fsspec_fuse.Mount.__repr__">
+<span class="sig-name descname"><span class="pre">__repr__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../_modules/fsspec_fuse/mount.html#Mount.__repr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fsspec_fuse.Mount.__repr__" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fsspec_fuse.mount">
+<span class="sig-prename descclassname"><span class="pre">fsspec_fuse.</span></span><span class="sig-name descname"><span class="pre">mount</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mountpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">os.PathLike</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">threads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">storage_options</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fsspec_fuse.Mount" title="fsspec_fuse.Mount"><span class="pre">Mount</span></a></span></span><a class="reference internal" href="../../_modules/fsspec_fuse/mount.html#mount"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fsspec_fuse.mount" title="Link to this definition">¶</a></dt>
+<dd><p>Mount <code class="docutils literal notranslate"><span class="pre">url</span></code> read-only at the existing directory <code class="docutils literal notranslate"><span class="pre">mountpoint</span></code>.</p>
+<p>The URL resolves through the fsspec-rs registry shared by every extension in the
+process: native backends such as <code class="docutils literal notranslate"><span class="pre">file://</span></code>, <code class="docutils literal notranslate"><span class="pre">s3://</span></code>, <code class="docutils literal notranslate"><span class="pre">db+sqlite://</span></code>, or <code class="docutils literal notranslate"><span class="pre">kafka://</span></code>
+when their packages are imported, and any Python fsspec backend otherwise.
+<code class="docutils literal notranslate"><span class="pre">threads</span></code> sets how many requests the mount serves at once.</p>
+</dd></dl>
 
 </section>
 </section>
@@ -195,17 +315,17 @@
 
       </div>
 <nav class="fd-pagination" aria-label="Pagination">
-  <a class="fd-pagination-card fd-pagination-prev" href="../test_all/index.html" title="Previous: test_all">
+  <a class="fd-pagination-card fd-pagination-prev" href="../test_mount/index.html" title="Previous: test_mount">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="fd-icon "><path d="m15 18-6-6 6-6"/></svg>
     <span class="fd-pagination-text">
       <span class="fd-pagination-label">Previous</span>
-      <span class="fd-pagination-title">test_all</span>
+      <span class="fd-pagination-title">test_mount</span>
     </span>
   </a>
-  <a class="fd-pagination-card fd-pagination-next" href="fsspec_fuse/index.html" title="Next: fsspec_fuse.fsspec_fuse">
+  <a class="fd-pagination-card fd-pagination-next" href="cli/index.html" title="Next: fsspec_fuse.cli">
     <span class="fd-pagination-text">
       <span class="fd-pagination-label">Next</span>
-      <span class="fd-pagination-title">fsspec_fuse.fsspec_fuse</span>
+      <span class="fd-pagination-title">fsspec_fuse.cli</span>
     </span>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="fd-icon "><path d="m9 18 6-6-6-6"/></svg>
   </a>
@@ -229,13 +349,46 @@
     <a href="#submodules">Submodules</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
-    <a href="#attributes">Attributes</a>
+    <a href="#classes">Classes</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
+    <a href="#functions">Functions</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
     <a href="#package-contents">Package Contents</a>
   </li>
   <li class="fd-toc-item" data-depth="2">
-    <a href="#fsspec_fuse.__version__">__version__</a>
+    <a href="#fsspec_fuse.linked_to_libfsspec">linked_to_libfsspec()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="2">
+    <a href="#fsspec_fuse.Mount">Mount</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.url">Mount.url</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.mountpoint">Mount.mountpoint</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount._session">Mount._session</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.mounted">Mount.mounted</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.unmount">Mount.unmount()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.__enter__">Mount.__enter__()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.__exit__">Mount.__exit__()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="3">
+    <a href="#fsspec_fuse.Mount.__repr__">Mount.__repr__()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="2">
+    <a href="#fsspec_fuse.mount">mount()</a>
   </li>
 </ul>
 

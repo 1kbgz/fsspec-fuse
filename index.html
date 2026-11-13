@@ -92,6 +92,11 @@
     </a>
   </li>
   <li class="fd-tree-item">
+    <a class="fd-link" href="autoapi/test_mount/index.html">
+      <span class="fd-link-text">test_mount</span>
+    </a>
+  </li>
+  <li class="fd-tree-item">
     <details class="fd-folder">
       <summary class="fd-folder-summary" title="Toggle section: fsspec_fuse">
         <a class="fd-link" href="autoapi/fsspec_fuse/index.html">
@@ -102,8 +107,18 @@
       
 <ul class="fd-tree">
   <li class="fd-tree-item">
+    <a class="fd-link" href="autoapi/fsspec_fuse/cli/index.html">
+      <span class="fd-link-text">fsspec_fuse.cli</span>
+    </a>
+  </li>
+  <li class="fd-tree-item">
     <a class="fd-link" href="autoapi/fsspec_fuse/fsspec_fuse/index.html">
       <span class="fd-link-text">fsspec_fuse.fsspec_fuse</span>
+    </a>
+  </li>
+  <li class="fd-tree-item">
+    <a class="fd-link" href="autoapi/fsspec_fuse/mount/index.html">
+      <span class="fd-link-text">fsspec_fuse.mount</span>
     </a>
   </li>
 </ul>
@@ -136,6 +151,9 @@
   <li class="fd-toc-item" data-depth="1">
     <a href="#overview">Overview</a>
   </li>
+  <li class="fd-toc-item" data-depth="1">
+    <a href="#requirements">Requirements</a>
+  </li>
 </ul>
 </div>
   </div>
@@ -154,6 +172,37 @@
 <a class="reference external" href="https://pypi.python.org/pypi/fsspec-fuse"><img alt="PyPI" src="https://img.shields.io/pypi/v/fsspec-fuse.svg" /></a></p>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">fsspec-fuse</span></code> mounts an fsspec URL as a read-only local directory, so any program can
+list and read it with ordinary file operations.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fsspec-fuse<span class="w"> </span>s3://my-bucket/reports<span class="w"> </span>/mnt/reports<span class="w"> </span>-o<span class="w"> </span><span class="nv">region</span><span class="o">=</span>us-east-1
+ls<span class="w"> </span>/mnt/reports
+</pre></div>
+</div>
+<p>URLs resolve through the filesystem registry that <a class="reference external" href="https://github.com/1kbgz/fsspec-rs">fsspec-rs</a>
+shares between extensions. Native backends (<code class="docutils literal notranslate"><span class="pre">file://</span></code>, <code class="docutils literal notranslate"><span class="pre">s3://</span></code>, and protocols registered by
+packages such as fsspec-db and fsspec-kafka) run in Rust. Any other protocol falls back to
+the Python fsspec implementation installed for it, such as gcsfs or adlfs.</p>
+<p>From Python, <code class="docutils literal notranslate"><span class="pre">mount</span></code> returns a handle that unmounts on <code class="docutils literal notranslate"><span class="pre">unmount()</span></code> or when its <code class="docutils literal notranslate"><span class="pre">with</span></code> block
+ends:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">fsspec_fuse</span><span class="w"> </span><span class="kn">import</span> <span class="n">mount</span>
+
+<span class="k">with</span> <span class="n">mount</span><span class="p">(</span><span class="s2">"s3://my-bucket/reports"</span><span class="p">,</span> <span class="s2">"/mnt/reports"</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="s2">"us-east-1"</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s2">"/mnt/reports"</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Storage options pass to the backend as strings. <code class="docutils literal notranslate"><span class="pre">threads</span></code> sets how many requests the mount
+serves at once (default 4).</p>
+</section>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Linux: FUSE 3 (<code class="docutils literal notranslate"><span class="pre">fusermount3</span></code>, from the <code class="docutils literal notranslate"><span class="pre">fuse3</span></code> package on Debian and Ubuntu).</p></li>
+<li><p>macOS: <a class="reference external" href="https://macfuse.github.io">macFUSE</a>.</p></li>
+<li><p>Windows is not supported yet.</p></li>
+</ul>
+<p>Mounts are read-only. Writes, creating files, and renames fail with <code class="docutils literal notranslate"><span class="pre">EROFS</span></code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This library was generated using <a class="reference external" href="https://copier.readthedocs.io/en/stable/">copier</a> from the <a class="reference external" href="https://github.com/python-project-templates/base">Base Python Project Template repository</a>.</p>
@@ -189,6 +238,9 @@
     </svg><ul class="fd-toc-list">
   <li class="fd-toc-item" data-depth="1">
     <a href="#overview">Overview</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
+    <a href="#requirements">Requirements</a>
   </li>
 </ul>
 
