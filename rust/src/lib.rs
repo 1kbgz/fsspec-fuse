@@ -596,6 +596,28 @@ impl FsspecFuse {
     }
 }
 
+/// Whether rename `flags` forbid replacing the target. Exchanging two paths, and any other
+/// flag, is not supported.
+#[cfg(target_os = "linux")]
+fn no_replace(flags: RenameFlags) -> Result<bool, Errno> {
+    if (flags - RenameFlags::RENAME_NOREPLACE).is_empty() {
+        Ok(flags.contains(RenameFlags::RENAME_NOREPLACE))
+    } else {
+        Err(Errno::EINVAL)
+    }
+}
+
+/// Whether rename `flags` forbid replacing the target. fuser defines rename flags only on
+/// Linux, so any flag is unsupported elsewhere.
+#[cfg(not(target_os = "linux"))]
+fn no_replace(flags: RenameFlags) -> Result<bool, Errno> {
+    if flags.is_empty() {
+        Ok(false)
+    } else {
+        Err(Errno::EINVAL)
+    }
+}
+
 /// The UTF-8 name FUSE passed, or `ENOENT` for names no fsspec path can hold.
 fn name(name: &OsStr) -> Result<&str, Errno> {
     name.to_str().ok_or(Errno::ENOENT)
@@ -700,12 +722,9 @@ impl Filesystem for FsspecFuse {
         if self.read_only {
             return reply.error(Errno::EROFS);
         }
-        if flags.contains(RenameFlags::RENAME_EXCHANGE) {
-            return reply.error(Errno::EINVAL);
-        }
-        let no_replace = flags.contains(RenameFlags::RENAME_NOREPLACE);
-        let result = self::name(name).and_then(|name| {
-            self.rename_entry(parent, name, newparent, self::name(newname)?, no_replace)
+        let result = no_replace(flags).and_then(|no_replace| {
+            let (name, newname) = (self::name(name)?, self::name(newname)?);
+            self.rename_entry(parent, name, newparent, newname, no_replace)
         });
         match result {
             Ok(()) => reply.ok(),

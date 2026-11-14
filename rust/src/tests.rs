@@ -344,3 +344,19 @@ fn directories_made_on_an_object_store_stay_visible() {
         .collect();
     assert_eq!(names, [".", "..", "keep.txt"]);
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn rename_supports_only_the_no_replace_flag() {
+    use fuser::RenameFlags;
+
+    use crate::no_replace;
+
+    assert_eq!(no_replace(RenameFlags::empty()), Ok(false));
+    assert_eq!(no_replace(RenameFlags::RENAME_NOREPLACE), Ok(true));
+    assert_eq!(no_replace(RenameFlags::RENAME_EXCHANGE), Err(Errno::EINVAL));
+    assert_eq!(
+        no_replace(RenameFlags::RENAME_NOREPLACE | RenameFlags::RENAME_WHITEOUT),
+        Err(Errno::EINVAL)
+    );
+}

@@ -31,7 +31,7 @@ writable mount adds these:
 | `chmod`, `chown`, set times | none                                | Accepted and ignored.                                       |
 
 Rename returns `EEXIST` when `RENAME_NOREPLACE` is set and the target exists, and `EINVAL`
-for `RENAME_EXCHANGE`. Renaming a directory onto a file returns `ENOTDIR`, and a file onto a
+for any other flag, such as `RENAME_EXCHANGE`. On macOS every rename flag returns `EINVAL`. Renaming a directory onto a file returns `ENOTDIR`, and a file onto a
 directory `EISDIR`.
 
 ## Attributes

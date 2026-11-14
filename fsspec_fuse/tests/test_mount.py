@@ -11,7 +11,7 @@ import fsspec_rs
 import pytest
 from fsspec.implementations.memory import MemoryFileSystem
 
-from fsspec_fuse import linked_to_libfsspec, mount
+from fsspec_fuse import cli, linked_to_libfsspec, mount
 from fsspec_fuse.cli import _options
 from fsspec_fuse.mount import _option
 
@@ -214,3 +214,29 @@ def test_storage_options_become_strings():
     assert _options(["region=us-east-1", "endpoint_url=http://a=b"]) == {"region": "us-east-1", "endpoint_url": "http://a=b"}
     with pytest.raises(Exception, match="KEY=VALUE"):
         _options(["region"])
+
+
+def test_cli_passes_its_arguments_to_mount(monkeypatch):
+    calls = []
+
+    class Unmounted:
+        mounted = False
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+    def fake_mount(url, mountpoint, **kwargs):
+        calls.append((url, mountpoint, kwargs))
+        return Unmounted()
+
+    monkeypatch.setattr(cli, "mount", fake_mount)
+    monkeypatch.setattr(cli.signal, "signal", lambda *args: None)
+    assert cli.main(["s3://bucket/data", "/mnt/data", "-o", "region=us-east-1", "--threads", "2", "--writable"]) == 0
+    assert cli.main(["s3://bucket/data", "/mnt/data"]) == 0
+    assert calls == [
+        ("s3://bucket/data", "/mnt/data", {"threads": 2, "read_only": False, "region": "us-east-1"}),
+        ("s3://bucket/data", "/mnt/data", {"threads": 4, "read_only": True}),
+    ]
