@@ -69,6 +69,28 @@ fsspec-fuse gcs://my-public-bucket/data /mnt/data -o token=anon
 
 Storage options reach the Python backend as strings.
 
+## Write to a mount
+
+Pass `--writable` to create, change, rename, and delete files:
+
+```console
+fsspec-fuse s3://warehouse/uploads /mnt/uploads -o region=us-east-1 --writable
+```
+
+From Python, pass `read_only=False`:
+
+```python
+from fsspec_fuse import mount
+
+with mount("s3://warehouse/uploads", "/mnt/uploads", region="us-east-1", read_only=False):
+    with open("/mnt/uploads/report.csv", "w") as f:
+        f.write("a,b\n1,2\n")
+```
+
+Each file is uploaded when it is closed, so check for errors from `close()`; with a `with`
+block, they are raised when the block ends. A file being written is held in memory, so
+copy very large files with the backend's own tools instead.
+
 ## Serve more requests at once
 
 Raise `--threads` (or `threads=` in Python) when many processes read the mount at once or

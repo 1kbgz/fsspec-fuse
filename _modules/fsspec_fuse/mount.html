@@ -559,8 +559,8 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="Mount">
 <a class="viewcode-back" href="../../docs/src/api.html#fsspec_fuse.Mount">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Mount</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""A read-only mount of an fsspec URL. Unmounts on ``unmount()``, on context exit,</span>
-<span class="sd">    or when garbage collected."""</span>
+<span class="w">    </span><span class="sd">"""A mount of an fsspec URL. Unmounts on ``unmount()``, on context exit, or when</span>
+<span class="sd">    garbage collected."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">RustMount</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span>
@@ -594,17 +594,21 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="mount">
 <a class="viewcode-back" href="../../docs/src/api.html#fsspec_fuse.mount">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">mount</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">threads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="o">**</span><span class="n">storage_options</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mount</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Mount ``url`` read-only at the existing directory ``mountpoint``.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mount</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">threads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">read_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">storage_options</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mount</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Mount ``url`` at the existing directory ``mountpoint``.</span>
 
 <span class="sd">    The URL resolves through the fsspec-rs registry shared by every extension in the</span>
 <span class="sd">    process: native backends such as ``file://``, ``s3://``, ``db+sqlite://``, or ``kafka://``</span>
 <span class="sd">    when their packages are imported, and any Python fsspec backend otherwise.</span>
 <span class="sd">    ``threads`` sets how many requests the mount serves at once.</span>
+
+<span class="sd">    With ``read_only=False`` the mount accepts changes. A file opened for writing is</span>
+<span class="sd">    held in memory and written to the filesystem when it is flushed or closed, so a</span>
+<span class="sd">    failed upload surfaces as an error from ``close()``.</span>
 <span class="sd">    """</span>
     <span class="n">mountpoint</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fspath</span><span class="p">(</span><span class="n">mountpoint</span><span class="p">)</span>
     <span class="n">options</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">_option</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">storage_options</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-    <span class="k">return</span> <span class="n">Mount</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">,</span> <span class="n">_mount</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">threads</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="n">Mount</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">,</span> <span class="n">_mount</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">threads</span><span class="p">,</span> <span class="n">read_only</span><span class="p">))</span></div>
 
 </pre></div>
 

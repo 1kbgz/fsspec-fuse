@@ -141,6 +141,9 @@
     <a href="#mount-a-backend-that-only-exists-in-python">Mount a backend that only exists in Python</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
+    <a href="#write-to-a-mount">Write to a mount</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
     <a href="#serve-more-requests-at-once">Serve more requests at once</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
@@ -212,6 +215,24 @@ with gcsfs:</p>
 </div>
 <p>Storage options reach the Python backend as strings.</p>
 </section>
+<section id="write-to-a-mount">
+<h2>Write to a mount<a class="headerlink" href="#write-to-a-mount" title="Link to this heading">¶</a></h2>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">--writable</span></code> to create, change, rename, and delete files:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">fsspec-fuse s3://warehouse/uploads /mnt/uploads -o region=us-east-1 --writable</span>
+</pre></div>
+</div>
+<p>From Python, pass <code class="docutils literal notranslate"><span class="pre">read_only=False</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fsspec_fuse</span><span class="w"> </span><span class="kn">import</span> <span class="n">mount</span>
+
+<span class="k">with</span> <span class="n">mount</span><span class="p">(</span><span class="s2">"s3://warehouse/uploads"</span><span class="p">,</span> <span class="s2">"/mnt/uploads"</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="s2">"us-east-1"</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"/mnt/uploads/report.csv"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"a,b</span><span class="se">\n</span><span class="s2">1,2</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Each file is uploaded when it is closed, so check for errors from <code class="docutils literal notranslate"><span class="pre">close()</span></code>; with a <code class="docutils literal notranslate"><span class="pre">with</span></code>
+block, they are raised when the block ends. A file being written is held in memory, so
+copy very large files with the backend’s own tools instead.</p>
+</section>
 <section id="serve-more-requests-at-once">
 <h2>Serve more requests at once<a class="headerlink" href="#serve-more-requests-at-once" title="Link to this heading">¶</a></h2>
 <p>Raise <code class="docutils literal notranslate"><span class="pre">--threads</span></code> (or <code class="docutils literal notranslate"><span class="pre">threads=</span></code> in Python) when many processes read the mount at once or
@@ -276,6 +297,9 @@ the backend has high latency:</p>
   </li>
   <li class="fd-toc-item" data-depth="1">
     <a href="#mount-a-backend-that-only-exists-in-python">Mount a backend that only exists in Python</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
+    <a href="#write-to-a-mount">Write to a mount</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
     <a href="#serve-more-requests-at-once">Serve more requests at once</a>

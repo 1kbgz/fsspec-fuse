@@ -2,7 +2,7 @@
 
 fsspec-fuse is one program that mounts URLs served by Rust backends, such as `file://` and
 `s3://` from fsspec-rs, and URLs served only by Python packages, such as gcsfs. This page
-explains how that works, what it costs, and why mounts start out read-only.
+explains how that works, what it costs, and how writable mounts handle object stores.
 
 ## One registry per process
 
@@ -32,18 +32,31 @@ same time. Python releases the GIL during blocking file calls such as `os.listdi
 reads the mount while holding the GIL would block the thread that serves it. Running the
 mount in its own process, as the `fsspec-fuse` command does, avoids that case.
 
-## Why mounts are read-only
+## Why writes go through a buffer
 
 A local filesystem lets a program write a few bytes into the middle of a file. Object
-stores do not: S3 replaces a whole object on every write. A writable mount over S3 has to
-collect a file's writes and upload the complete object when the file closes, and it has to
-report a failed upload on close rather than on the write that caused it. Renames become a
-copy followed by a delete.
+stores do not: S3 replaces a whole object on every write. fsspec-fuse treats every backend
+as an object store, so a file opened for writing is copied into memory, changed there, and
+uploaded in full when the program closes or syncs it. That works the same on S3, a local
+directory, or a Python backend, and it allows writes at any offset.
 
-mountpoint-s3, AWS's S3 mount, handles this by allowing only sequential writes to new
-files. Another approach buffers each open file, which costs memory or temporary disk but
-allows random writes. fsspec-fuse started read-only so that behavior is the same on every
-backend while a write design is chosen.
+The costs follow from the design. A file being written uses as much memory as its size,
+and opening a large file to append one line downloads all of it first. A failed upload
+surfaces from `close()` rather than from the `write()` that caused it, so programs that
+ignore errors from `close()` can miss it. mountpoint-s3, AWS's S3 mount, makes the other
+trade: it streams sequential writes to new files as a multipart upload and rejects
+anything else. Streaming large sequential files may come later as an addition to the
+buffer.
+
+Directories need similar care. An object store has no directories, only keys with slashes
+in them, so a directory exists while something is stored below it. A program that runs
+`mkdir` and then lists its parent expects to see the new directory, so the mount remembers
+directories it created, and ones left empty by a delete or a move, until they are removed.
+Renames are a copy followed by a delete, file by file, because object stores have no
+rename.
+
+Mounts stay read-only unless writes are requested. A read-only mount cannot lose or
+overwrite data, and most mounts of remote data are only read.
 
 ## When changes appear
 

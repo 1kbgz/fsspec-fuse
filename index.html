@@ -154,8 +154,8 @@
 <a class="reference external" href="https://pypi.python.org/pypi/fsspec-fuse"><img alt="PyPI" src="https://img.shields.io/pypi/v/fsspec-fuse.svg" /></a></p>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">fsspec-fuse</span></code> mounts an fsspec URL as a read-only local directory, so any program can
-list and read it with ordinary file operations.</p>
+<p><code class="docutils literal notranslate"><span class="pre">fsspec-fuse</span></code> mounts an fsspec URL as a local directory, so any program can list and read
+it with ordinary file operations. Mounts are read-only unless writes are turned on.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fsspec-fuse<span class="w"> </span>s3://my-bucket/reports<span class="w"> </span>/mnt/reports<span class="w"> </span>-o<span class="w"> </span><span class="nv">region</span><span class="o">=</span>us-east-1
 ls<span class="w"> </span>/mnt/reports
 </pre></div>
@@ -184,13 +184,15 @@ serves at once (default 4).</p>
 <li><p>macOS: <a class="reference external" href="https://macfuse.github.io">macFUSE</a>.</p></li>
 <li><p>Windows is not supported yet.</p></li>
 </ul>
-<p>Mounts are read-only. Writes, creating files, and renames fail with <code class="docutils literal notranslate"><span class="pre">EROFS</span></code>.</p>
+<p>Mounts are read-only by default, and changes fail with <code class="docutils literal notranslate"><span class="pre">EROFS</span></code>. Pass <code class="docutils literal notranslate"><span class="pre">--writable</span></code> (or
+<code class="docutils literal notranslate"><span class="pre">read_only=False</span></code> in Python) to create, change, rename, and delete files. A file opened for
+writing is held in memory and uploaded when it is closed.</p>
 </section>
 <section id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h2>
 <p>Start with <a class="reference internal" href="docs/src/tutorial.html"><span class="std std-doc">Mount a directory and read it</span></a>.
-<a class="reference internal" href="docs/src/how-to.html"><span class="std std-doc">Mount a remote filesystem</span></a> covers S3, Python-only backends,
-concurrency, and stale mounts.</p>
+<a class="reference internal" href="docs/src/how-to.html"><span class="std std-doc">Mount a remote filesystem</span></a> covers S3, Python-only backends, writable
+mounts, concurrency, and stale mounts.</p>
 <p>Look up the <a class="reference internal" href="docs/src/cli.html"><span class="std std-doc">command line</span></a>, the <a class="reference internal" href="docs/src/api.html"><span class="std std-doc">Python API</span></a>, or
 <a class="reference internal" href="docs/src/mounts.html"><span class="std std-doc">mount behavior</span></a> such as attributes and error codes.
 <a class="reference internal" href="docs/src/explanation.html"><span class="std std-doc">How one mount reaches Rust and Python backends</span></a> covers the

@@ -134,7 +134,7 @@
     <a href="#the-cost-of-a-python-backend">The cost of a Python backend</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
-    <a href="#why-mounts-are-read-only">Why mounts are read-only</a>
+    <a href="#why-writes-go-through-a-buffer">Why writes go through a buffer</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
     <a href="#when-changes-appear">When changes appear</a>
@@ -150,7 +150,7 @@
 <h1>How one mount reaches Rust and Python backends<a class="headerlink" href="#how-one-mount-reaches-rust-and-python-backends" title="Link to this heading">¶</a></h1>
 <p>fsspec-fuse is one program that mounts URLs served by Rust backends, such as <code class="docutils literal notranslate"><span class="pre">file://</span></code> and
 <code class="docutils literal notranslate"><span class="pre">s3://</span></code> from fsspec-rs, and URLs served only by Python packages, such as gcsfs. This page
-explains how that works, what it costs, and why mounts start out read-only.</p>
+explains how that works, what it costs, and how writable mounts handle object stores.</p>
 <section id="one-registry-per-process">
 <h2>One registry per process<a class="headerlink" href="#one-registry-per-process" title="Link to this heading">¶</a></h2>
 <p>fsspec-rs ships a shared library, <code class="docutils literal notranslate"><span class="pre">libfsspec</span></code>, that holds the filesystem registry for the
@@ -177,17 +177,28 @@ same time. Python releases the GIL during blocking file calls such as <code clas
 reads the mount while holding the GIL would block the thread that serves it. Running the
 mount in its own process, as the <code class="docutils literal notranslate"><span class="pre">fsspec-fuse</span></code> command does, avoids that case.</p>
 </section>
-<section id="why-mounts-are-read-only">
-<h2>Why mounts are read-only<a class="headerlink" href="#why-mounts-are-read-only" title="Link to this heading">¶</a></h2>
+<section id="why-writes-go-through-a-buffer">
+<h2>Why writes go through a buffer<a class="headerlink" href="#why-writes-go-through-a-buffer" title="Link to this heading">¶</a></h2>
 <p>A local filesystem lets a program write a few bytes into the middle of a file. Object
-stores do not: S3 replaces a whole object on every write. A writable mount over S3 has to
-collect a file’s writes and upload the complete object when the file closes, and it has to
-report a failed upload on close rather than on the write that caused it. Renames become a
-copy followed by a delete.</p>
-<p>mountpoint-s3, AWS’s S3 mount, handles this by allowing only sequential writes to new
-files. Another approach buffers each open file, which costs memory or temporary disk but
-allows random writes. fsspec-fuse started read-only so that behavior is the same on every
-backend while a write design is chosen.</p>
+stores do not: S3 replaces a whole object on every write. fsspec-fuse treats every backend
+as an object store, so a file opened for writing is copied into memory, changed there, and
+uploaded in full when the program closes or syncs it. That works the same on S3, a local
+directory, or a Python backend, and it allows writes at any offset.</p>
+<p>The costs follow from the design. A file being written uses as much memory as its size,
+and opening a large file to append one line downloads all of it first. A failed upload
+surfaces from <code class="docutils literal notranslate"><span class="pre">close()</span></code> rather than from the <code class="docutils literal notranslate"><span class="pre">write()</span></code> that caused it, so programs that
+ignore errors from <code class="docutils literal notranslate"><span class="pre">close()</span></code> can miss it. mountpoint-s3, AWS’s S3 mount, makes the other
+trade: it streams sequential writes to new files as a multipart upload and rejects
+anything else. Streaming large sequential files may come later as an addition to the
+buffer.</p>
+<p>Directories need similar care. An object store has no directories, only keys with slashes
+in them, so a directory exists while something is stored below it. A program that runs
+<code class="docutils literal notranslate"><span class="pre">mkdir</span></code> and then lists its parent expects to see the new directory, so the mount remembers
+directories it created, and ones left empty by a delete or a move, until they are removed.
+Renames are a copy followed by a delete, file by file, because object stores have no
+rename.</p>
+<p>Mounts stay read-only unless writes are requested. A read-only mount cannot lose or
+overwrite data, and most mounts of remote data are only read.</p>
 </section>
 <section id="when-changes-appear">
 <h2>When changes appear<a class="headerlink" href="#when-changes-appear" title="Link to this heading">¶</a></h2>
@@ -232,7 +243,7 @@ to remote backends at the cost of staler listings.</p>
     <a href="#the-cost-of-a-python-backend">The cost of a Python backend</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
-    <a href="#why-mounts-are-read-only">Why mounts are read-only</a>
+    <a href="#why-writes-go-through-a-buffer">Why writes go through a buffer</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
     <a href="#when-changes-appear">When changes appear</a>
