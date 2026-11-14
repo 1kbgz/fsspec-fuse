@@ -14,8 +14,8 @@ def _option(value: object) -> str:
 
 
 class Mount:
-    """A read-only mount of an fsspec URL. Unmounts on ``unmount()``, on context exit,
-    or when garbage collected."""
+    """A mount of an fsspec URL. Unmounts on ``unmount()``, on context exit, or when
+    garbage collected."""
 
     def __init__(self, url: str, mountpoint: str, session: RustMount):
         self.url = url
@@ -43,14 +43,18 @@ class Mount:
         return f"Mount({self.url!r}, {self.mountpoint!r}, {state})"
 
 
-def mount(url: str, mountpoint: str | os.PathLike[str], *, threads: int = 4, **storage_options) -> Mount:
-    """Mount ``url`` read-only at the existing directory ``mountpoint``.
+def mount(url: str, mountpoint: str | os.PathLike[str], *, threads: int = 4, read_only: bool = True, **storage_options) -> Mount:
+    """Mount ``url`` at the existing directory ``mountpoint``.
 
     The URL resolves through the fsspec-rs registry shared by every extension in the
     process: native backends such as ``file://``, ``s3://``, ``db+sqlite://``, or ``kafka://``
     when their packages are imported, and any Python fsspec backend otherwise.
     ``threads`` sets how many requests the mount serves at once.
+
+    With ``read_only=False`` the mount accepts changes. A file opened for writing is
+    held in memory and written to the filesystem when it is flushed or closed, so a
+    failed upload surfaces as an error from ``close()``.
     """
     mountpoint = os.fspath(mountpoint)
     options = {key: _option(value) for key, value in storage_options.items()}
-    return Mount(url, mountpoint, _mount(url, mountpoint, options, threads))
+    return Mount(url, mountpoint, _mount(url, mountpoint, options, threads, read_only))

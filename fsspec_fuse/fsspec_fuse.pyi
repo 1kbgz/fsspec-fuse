@@ -10,5 +10,6 @@ def mount(
     mountpoint: str | os.PathLike[str],
     storage_options: dict[str, str] | None = None,
     threads: int = 4,
+    read_only: bool = True,
 ) -> RustMount: ...
 def linked_to_libfsspec() -> bool: ...

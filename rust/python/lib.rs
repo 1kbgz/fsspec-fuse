@@ -49,19 +49,20 @@ impl RustMount {
     }
 }
 
-/// Mounts `url` read-only at `mountpoint` and returns the session.
+/// Mounts `url` at `mountpoint` and returns the session.
 #[pyfunction]
-#[pyo3(signature = (url, mountpoint, storage_options = None, threads = 4))]
+#[pyo3(signature = (url, mountpoint, storage_options = None, threads = 4, read_only = true))]
 fn mount(
     py: Python<'_>,
     url: &str,
     mountpoint: PathBuf,
     storage_options: Option<HashMap<String, String>>,
     threads: usize,
+    read_only: bool,
 ) -> PyResult<RustMount> {
     let options: FsOptions = storage_options.unwrap_or_default().into_iter().collect();
     let (fs, root) = fsspec_rs::url_to_fs(url, &options).map_err(fs_error)?;
-    let config = ::fsspec_fuse::config(url, threads);
+    let config = ::fsspec_fuse::config(url, threads, read_only);
     let session = py.detach(|| ::fsspec_fuse::spawn_mount(fs, root, &mountpoint, &config))?;
     Ok(RustMount {
         session: Mutex::new(Some(session)),

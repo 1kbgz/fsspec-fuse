@@ -1,11 +1,11 @@
 # Command-line reference
 
 ```text
-fsspec-fuse URL MOUNTPOINT [-o KEY=VALUE]... [--threads N]
+fsspec-fuse URL MOUNTPOINT [-o KEY=VALUE]... [--threads N] [--writable]
 ```
 
-Mounts `URL` read-only at the existing directory `MOUNTPOINT` and keeps running until
-interrupted.
+Mounts `URL` at the existing directory `MOUNTPOINT` and keeps running until interrupted.
+The mount is read-only unless `--writable` is given.
 
 | Argument                   | Default  | Meaning                                                                    |
 | -------------------------- | -------- | -------------------------------------------------------------------------- |
@@ -13,6 +13,7 @@ interrupted.
 | `MOUNTPOINT`               | required | Existing directory to mount on.                                            |
 | `-o KEY=VALUE`, `--option` | none     | Storage option passed to the backend as a string. Repeat for more options. |
 | `--threads N`              | `4`      | Number of requests served at once.                                         |
+| `--writable`               | off      | Allow creating, changing, renaming, and deleting files and directories.    |
 | `-h`, `--help`             | off      | Show help and exit.                                                        |
 
 An option without `=` or with an empty key is rejected before mounting.

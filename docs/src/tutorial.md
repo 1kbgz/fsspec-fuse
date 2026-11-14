@@ -75,7 +75,7 @@ Run the script again. The last line of output is:
 Read-only file system
 ```
 
-Mounts are read-only, so `demo/source` is unchanged.
+Mounts are read-only unless you ask for writes, so `demo/source` is unchanged.
 
 ## Check the unmount
 
