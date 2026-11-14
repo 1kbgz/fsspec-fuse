@@ -19,11 +19,12 @@ def _options(pairs: list[str]) -> dict[str, str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="fsspec-fuse", description="Mount an fsspec URL read-only with FUSE.")
+    parser = argparse.ArgumentParser(prog="fsspec-fuse", description="Mount an fsspec URL with FUSE, read-only unless --writable is given.")
     parser.add_argument("url", help="fsspec URL to mount, such as s3://bucket/prefix")
     parser.add_argument("mountpoint", help="existing directory to mount on")
     parser.add_argument("-o", "--option", action="append", default=[], metavar="KEY=VALUE", help="storage option; repeat for more")
     parser.add_argument("--threads", type=int, default=4, help="requests served at once (default: 4)")
+    parser.add_argument("--writable", action="store_true", help="allow creating, changing, and removing files")
     args = parser.parse_args(argv)
     try:
         options = _options(args.option)
@@ -32,7 +33,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # SIGTERM unwinds like Ctrl-C so the mount is released on the way out.
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
-    with mount(args.url, args.mountpoint, threads=args.threads, **options) as mounted:
+    with mount(args.url, args.mountpoint, threads=args.threads, read_only=not args.writable, **options) as mounted:
         print(f"Mounted {args.url} at {args.mountpoint}; press Ctrl-C to unmount.", file=sys.stderr)
         try:
             while mounted.mounted:

@@ -9,8 +9,8 @@ Mount fsspec filesystems with FUSE
 
 ## Overview
 
-`fsspec-fuse` mounts an fsspec URL as a read-only local directory, so any program can
-list and read it with ordinary file operations.
+`fsspec-fuse` mounts an fsspec URL as a local directory, so any program can list and read
+it with ordinary file operations. Mounts are read-only unless writes are turned on.
 
 ```bash
 fsspec-fuse s3://my-bucket/reports /mnt/reports -o region=us-east-1
@@ -43,13 +43,15 @@ serves at once (default 4).
 - macOS: [macFUSE](https://macfuse.github.io).
 - Windows is not supported yet.
 
-Mounts are read-only. Writes, creating files, and renames fail with `EROFS`.
+Mounts are read-only by default, and changes fail with `EROFS`. Pass `--writable` (or
+`read_only=False` in Python) to create, change, rename, and delete files. A file opened for
+writing is held in memory and uploaded when it is closed.
 
 ## Documentation
 
 Start with [Mount a directory and read it](docs/src/tutorial.md).
-[Mount a remote filesystem](docs/src/how-to.md) covers S3, Python-only backends,
-concurrency, and stale mounts.
+[Mount a remote filesystem](docs/src/how-to.md) covers S3, Python-only backends, writable
+mounts, concurrency, and stale mounts.
 
 Look up the [command line](docs/src/cli.md), the [Python API](docs/src/api.md), or
 [mount behavior](docs/src/mounts.md) such as attributes and error codes.

@@ -98,6 +98,59 @@ def test_mount_is_read_only(mounted, tmp_path):
 
 
 @needs_fuse
+def test_writable_mount_changes_the_source(mounted, tmp_path):
+    source = tmp_path / "source"
+    (source / "sub").mkdir(parents=True)
+    (source / "a.txt").write_bytes(b"hello")
+
+    point = mounted(f"file://{source}", read_only=False)
+    (point / "new.txt").write_bytes(b"created")
+    assert (source / "new.txt").read_bytes() == b"created"
+    with open(point / "a.txt", "ab") as f:
+        f.write(b" world")
+    assert (source / "a.txt").read_bytes() == b"hello world"
+    with open(point / "a.txt", "r+b") as f:
+        f.write(b"J")
+        f.seek(0)
+        assert f.read() == b"Jello world"
+    assert (source / "a.txt").read_bytes() == b"Jello world"
+    os.truncate(point / "a.txt", 5)
+    assert (point / "a.txt").read_bytes() == b"Jello"
+
+    os.mkdir(point / "made")
+    assert (source / "made").is_dir()
+    os.rename(point / "new.txt", point / "made" / "moved.txt")
+    shutil.copy(point / "a.txt", point / "made" / "copy.txt")
+    assert sorted(os.listdir(source / "made")) == ["copy.txt", "moved.txt"]
+    os.unlink(point / "made" / "copy.txt")
+    with pytest.raises(OSError) as error:
+        os.rmdir(point / "made")
+    assert error.value.errno == errno.ENOTEMPTY
+    os.rename(point / "made", point / "renamed")
+    assert (source / "renamed" / "moved.txt").read_bytes() == b"created"
+    shutil.rmtree(point / "renamed")
+    assert sorted(os.listdir(source)) == ["a.txt", "sub"]
+
+
+@needs_fuse
+def test_writes_reach_a_python_only_backend(mounted):
+    fsspec.register_implementation("python-memory", PythonMemory, clobber=True)
+    root = f"/{uuid.uuid4().hex}"
+    memory = PythonMemory()
+    memory.mkdir(root)
+    try:
+        point = mounted(f"python-memory://{root}", read_only=False)
+        os.mkdir(point / "data")
+        (point / "data" / "values.csv").write_text("a,b\n1,2\n")
+        assert memory.cat_file(f"{root}/data/values.csv") == b"a,b\n1,2\n"
+        os.rename(point / "data" / "values.csv", point / "values.csv")
+        assert memory.cat_file(f"{root}/values.csv") == b"a,b\n1,2\n"
+        assert sorted(os.listdir(point)) == ["data", "values.csv"]
+    finally:
+        memory.rm(root, recursive=True)
+
+
+@needs_fuse
 def test_mounts_a_python_only_backend(mounted):
     fsspec.register_implementation("python-memory", PythonMemory, clobber=True)
     root = f"/{uuid.uuid4().hex}"
