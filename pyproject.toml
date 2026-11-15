@@ -2,7 +2,7 @@
 requires = [
     "hatchling",
     "hatch-rs>=0.6.1",
-    "fsspec-rs>=0.2.1,<0.3",
+    "fsspec-rs>=0.2.4,<0.3",
 ]
 build-backend = "hatchling.build"
 
@@ -37,7 +37,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "fsspec-rs>=0.2.1,<0.3",
+    "fsspec-rs>=0.2.4,<0.3",
 ]
 
 [project.optional-dependencies]

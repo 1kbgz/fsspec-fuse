@@ -540,9 +540,8 @@ impl FsspecFuse {
             Ok(_) | Err(Errno::ENOENT) => {}
             Err(error) => return Err(error),
         }
-        if source.is_dir() {
-            self.move_dir(&from, &to)?;
-        } else {
+        // A directory made through the mount on an object store has nothing to move.
+        if self.fs.exists(&from).map_err(|e| errno(&e))? {
             self.fs.mv(&from, &to).map_err(|e| errno(&e))?;
         }
         self.keep_parents(&from);
@@ -571,28 +570,6 @@ impl FsspecFuse {
             }
         }
         Ok(())
-    }
-
-    /// Moves the directory `from` to `to` one file at a time, creating each directory,
-    /// empty ones included, before removing the source. Paths are built from listing
-    /// names, so backends that list in a different path form than the mount uses still
-    /// move correctly.
-    fn move_dir(&self, from: &str, to: &str) -> Result<(), Errno> {
-        if !self.fs.exists(to).map_err(|e| errno(&e))? {
-            self.fs.mkdir(to, false).map_err(|e| errno(&e))?;
-        }
-        for (name, kind) in self.children(from)? {
-            let (src, dst) = (child(from, &name), child(to, &name));
-            if kind == FileType::Directory {
-                self.move_dir(&src, &dst)?;
-            } else {
-                self.fs.mv(&src, &dst).map_err(|e| errno(&e))?;
-            }
-        }
-        match self.fs.rmdir(from) {
-            Err(FsError::NotFound(_)) => Ok(()),
-            result => result.map_err(|e| errno(&e)),
-        }
     }
 }
 
