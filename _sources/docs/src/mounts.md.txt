@@ -27,7 +27,7 @@ writable mount adds these:
 | `rmdir`                     | `rmdir`                             | `ENOTEMPTY` unless the directory is empty.                  |
 | delete a file               | `rm_file`                           | Removes the file.                                           |
 | rename a file               | `mv`                                | Replaces an existing file at the target.                    |
-| rename a directory          | `mkdir`, `mv` per file, `rmdir`     | The target must be missing or an empty directory.           |
+| rename a directory          | `mv`                                | The target must be missing or an empty directory.           |
 | `chmod`, `chown`, set times | none                                | Accepted and ignored.                                       |
 
 Rename returns `EEXIST` when `RENAME_NOREPLACE` is set and the target exists, and `EINVAL`
