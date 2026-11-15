@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 fsspec_fuse = { path = "./rust", version = "*" }
-fsspec_rs = "0.2.1"
+fsspec_rs = "0.2.4"
 fsspec_sys = { version = "0.2.1", optional = true }
 pyo3 = { version = "0.30.1", features = ["abi3", "extension-module", "multiple-pymethods"] }
 

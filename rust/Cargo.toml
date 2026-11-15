@@ -14,7 +14,7 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [dependencies]
-fsspec_rs = "0.2.1"
+fsspec_rs = "0.2.4"
 fuser = "0.18"
 libc = "0.2"
 
