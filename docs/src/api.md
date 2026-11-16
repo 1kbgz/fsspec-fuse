@@ -8,6 +8,7 @@
 
    mount
    Mount
+   resolve
    linked_to_libfsspec
 ```
 
@@ -19,6 +20,10 @@
 .. autoclass:: fsspec_fuse.Mount
    :members:
    :member-order: bysource
+```
+
+```{eval-rst}
+.. autofunction:: fsspec_fuse.resolve
 ```
 
 ```{eval-rst}

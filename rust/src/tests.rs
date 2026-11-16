@@ -360,3 +360,36 @@ fn rename_supports_only_the_no_replace_flag() {
         Err(Errno::EINVAL)
     );
 }
+
+#[test]
+fn source_urls_put_the_path_on_the_outermost_filesystem() {
+    use crate::source_url;
+    assert_eq!(source_url("s3://bucket/data", ""), "s3://bucket/data");
+    assert_eq!(
+        source_url("s3://bucket/data", "a/b.csv"),
+        "s3://bucket/data/a/b.csv"
+    );
+    assert_eq!(source_url("memory://", "a.csv"), "memory://a.csv");
+    assert_eq!(
+        source_url("dataview::file:///data", "a.parquet"),
+        "dataview://a.parquet::file:///data"
+    );
+    assert_eq!(
+        source_url("dataview://sub::file:///data", "a.parquet"),
+        "dataview://sub/a.parquet::file:///data"
+    );
+}
+
+#[test]
+fn urls_of_inodes_follow_the_mount_root() {
+    let (_dir, fuse) = tree();
+    let sub = fuse.lookup_entry(INodeNo::ROOT, "sub").unwrap().ino;
+    let b = fuse.lookup_entry(sub, "b.txt").unwrap().ino;
+    assert_eq!(fuse.url(b).unwrap(), None);
+    let fuse = fuse.source_url("s3://bucket/data");
+    assert_eq!(
+        fuse.url(INodeNo::ROOT).unwrap().unwrap(),
+        "s3://bucket/data"
+    );
+    assert_eq!(fuse.url(b).unwrap().unwrap(), "s3://bucket/data/sub/b.txt");
+}

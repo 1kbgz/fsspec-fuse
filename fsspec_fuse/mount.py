@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import os
-from typing import Self
+import weakref
+from typing import Any, Self
 
 from fsspec import AbstractFileSystem
 from fsspec.core import url_to_fs
 
 from .fsspec_fuse import RustMount, mount as _mount, mount_filesystem as _mount_filesystem
+
+URL_XATTR = "user.fsspec.url"
+
+# Mounts made in this process by real mountpoint, so resolve() can return their filesystems.
+_MOUNTS: weakref.WeakValueDictionary[str, Mount] = weakref.WeakValueDictionary()
 
 
 def _option(value: object) -> str:
@@ -20,10 +26,29 @@ class Mount:
     """A mount of an fsspec URL. Unmounts on ``unmount()``, on context exit, or when
     garbage collected."""
 
-    def __init__(self, url: str | AbstractFileSystem, mountpoint: str, session: RustMount):
+    def __init__(
+        self,
+        url: str | AbstractFileSystem,
+        mountpoint: str,
+        session: RustMount,
+        fs: AbstractFileSystem | None = None,
+        root: str = "",
+        storage_options: dict[str, Any] | None = None,
+    ):
         self.url = url
         self.mountpoint = mountpoint
         self._session = session
+        self._fs = fs
+        self._root = root
+        self._storage_options = storage_options or {}
+        _MOUNTS[os.path.realpath(mountpoint)] = self
+
+    def filesystem(self) -> tuple[AbstractFileSystem, str]:
+        """The Python fsspec filesystem behind the mount and the path of its root. A URL
+        mount opens its URL with Python fsspec the first time this is called."""
+        if self._fs is None:
+            self._fs, self._root = url_to_fs(self.url, **self._storage_options)
+        return self._fs, self._root
 
     @property
     def mounted(self) -> bool:
@@ -73,12 +98,38 @@ def mount(
     mountpoint = os.fspath(mountpoint)
     if isinstance(url, str) and "::" in url:
         fs, path = url_to_fs(url, **storage_options)
-        return Mount(url, mountpoint, _mount_filesystem(fs, path, mountpoint, threads, read_only))
+        session = _mount_filesystem(fs, path, mountpoint, url, threads, read_only)
+        return Mount(url, mountpoint, session, fs, path)
     if isinstance(url, AbstractFileSystem):
         if storage_options:
             raise TypeError("storage options apply to URLs, not filesystem objects")
-        return Mount(url, mountpoint, _mount_filesystem(url, path, mountpoint, threads, read_only))
+        session = _mount_filesystem(url, path, mountpoint, url.unstrip_protocol(path), threads, read_only)
+        return Mount(url, mountpoint, session, url, path)
     if path:
         raise TypeError("path applies to filesystem objects; put it in the URL")
     options = {key: _option(value) for key, value in storage_options.items()}
-    return Mount(url, mountpoint, _mount(url, mountpoint, options, threads, read_only))
+    return Mount(url, mountpoint, _mount(url, mountpoint, options, threads, read_only), storage_options=storage_options)
+
+
+def resolve(path: str | os.PathLike[str]) -> tuple[AbstractFileSystem, str]:
+    """The fsspec filesystem and path behind ``path`` on a mount.
+
+    A mount made in this process resolves to the filesystem it mounted, with its storage
+    options. Other mounts resolve through the path's ``user.fsspec.url`` attribute (Linux
+    only), opened without storage options. Raises ``ValueError`` for a path on no mount.
+    """
+    path = os.path.realpath(path)
+    for point in sorted(_MOUNTS.keys(), key=len, reverse=True):
+        mount = _MOUNTS.get(point)
+        if mount is None or not mount.mounted or not (path == point or path.startswith(point + os.sep)):
+            continue
+        fs, root = mount.filesystem()
+        rel = os.path.relpath(path, point).replace(os.sep, "/")
+        if rel == ".":
+            return fs, root
+        return fs, f"{root.rstrip('/')}/{rel}" if root else rel
+    try:
+        url = os.getxattr(path, URL_XATTR).decode()
+    except (AttributeError, OSError) as error:
+        raise ValueError(f"{path} is not on an fsspec mount") from error
+    return url_to_fs(url)

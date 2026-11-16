@@ -99,6 +99,25 @@ with mount(
     ...
 ```
 
+## Find where a mounted file comes from
+
+`resolve` returns the fsspec filesystem and path behind a file on a mount, so a program can
+work with the source instead of the mounted copy:
+
+```python
+from fsspec_fuse import mount, resolve
+
+with mount("s3://warehouse/reports", "/mnt/reports", anon=True):
+    fs, path = resolve("/mnt/reports/2026.parquet")
+    # fs is an S3 filesystem and path is "warehouse/reports/2026.parquet"
+```
+
+From another process on Linux, read the URL from the file's extended attribute:
+
+```console
+getfattr -n user.fsspec.url /mnt/reports/2026.parquet
+```
+
 ## Write to a mount
 
 Pass `--writable` to create, change, rename, and delete files:

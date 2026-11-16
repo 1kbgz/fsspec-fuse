@@ -4,6 +4,6 @@ __version__ = "0.1.1"
 import fsspec_rs
 
 from .fsspec_fuse import linked_to_libfsspec
-from .mount import Mount, mount
+from .mount import URL_XATTR, Mount, mount, resolve
 
-__all__ = ("Mount", "linked_to_libfsspec", "mount")
+__all__ = ("URL_XATTR", "Mount", "linked_to_libfsspec", "mount", "resolve")

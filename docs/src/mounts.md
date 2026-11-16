@@ -47,6 +47,22 @@ directory `EISDIR`.
 
 The kernel caches attributes and lookups for 1 second.
 
+## Source URLs
+
+Every file and directory has the extended attribute `user.fsspec.url` (`URL_XATTR`), the
+fsspec URL it comes from: the mounted URL with the path below the mount appended. A chained
+URL puts the path on its outermost filesystem, so `a.parquet` on a mount of
+`dataview::file:///data` reports `dataview://a.parquet::file:///data`. A mounted filesystem
+object reports its `unstrip_protocol` URL, which leaves out what a wrapping filesystem
+wraps; `resolve` in the mounting process returns the object itself. Other attribute names return `ENODATA`
+(`ENOATTR` on macOS), and attributes cannot be set.
+
+`resolve(path)` returns the fsspec filesystem and path behind a local path. Mounts made in
+the same process return the filesystem they mounted, with its storage options; a URL mount
+opens its URL with Python fsspec on first use. Other mounts resolve through
+`user.fsspec.url` on Linux, without storage options. A path on no mount raises
+`ValueError`.
+
 ## Errors
 
 | Backend error             | errno     |
