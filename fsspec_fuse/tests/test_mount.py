@@ -11,7 +11,7 @@ import fsspec_rs
 import pytest
 from fsspec.implementations.memory import MemoryFileSystem
 
-from fsspec_fuse import cli, linked_to_libfsspec, mount
+from fsspec_fuse import URL_XATTR, cli, linked_to_libfsspec, mount, resolve
 from fsspec_fuse.cli import _options
 from fsspec_fuse.mount import _option
 
@@ -191,6 +191,36 @@ def test_mounts_a_chained_url_through_python_fsspec(mounted, tmp_path):
         assert any((tmp_path / "cache").iterdir())
     finally:
         memory.rm(root, recursive=True)
+
+
+@needs_fuse
+def test_resolve_returns_the_mounted_filesystem_and_path(mounted, tmp_path):
+    root = f"/{uuid.uuid4().hex}"
+    memory = MemoryFileSystem()
+    memory.pipe_file(f"{root}/data/values.csv", b"a\n1\n")
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "a.txt").write_bytes(b"x")
+    try:
+        point = mounted(memory, path=root)
+        assert resolve(point / "data" / "values.csv") == (memory, f"{root}/data/values.csv")
+        assert resolve(point) == (memory, root)
+        local = mounted(f"file://{source}")
+        fs, path = resolve(local / "a.txt")
+        assert fs.cat_file(path) == b"x"
+        chained = mounted(f"simplecache::memory://{root}", simplecache={"cache_storage": str(tmp_path / "cache")})
+        fs, path = resolve(chained / "data" / "values.csv")
+        assert path == f"{root}/data/values.csv"
+        assert fs.cat_file(path) == b"a\n1\n"
+        if sys.platform == "linux":
+            assert os.getxattr(point / "data" / "values.csv", URL_XATTR).decode() == f"memory://{root}/data/values.csv"
+            assert os.getxattr(local / "a.txt", URL_XATTR).decode() == f"file://{source}/a.txt"
+            assert os.getxattr(chained / "data", URL_XATTR).decode() == f"simplecache://data::memory://{root}"
+            assert URL_XATTR in os.listxattr(local / "a.txt")
+    finally:
+        memory.rm(root, recursive=True)
+    with pytest.raises(ValueError, match="not on an fsspec mount"):
+        resolve(tmp_path)
 
 
 def test_path_and_storage_options_match_the_source_kind():

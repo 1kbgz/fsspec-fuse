@@ -14,11 +14,19 @@ use fuser::{
     BsdFileFlags, Config, Errno, FileAttr, FileHandle, FileType, Filesystem, FopenFlags,
     Generation, INodeNo, LockOwner, MountOption, OpenAccMode, OpenFlags, RenameFlags, ReplyAttr,
     ReplyCreate, ReplyData, ReplyDirectory, ReplyEmpty, ReplyEntry, ReplyOpen, ReplyStatfs,
-    ReplyWrite, Request, TimeOrNow, WriteFlags,
+    ReplyWrite, ReplyXattr, Request, TimeOrNow, WriteFlags,
 };
 
 /// How long the kernel may cache attributes and lookups before asking again.
 const TTL: Duration = Duration::from_secs(1);
+
+/// The extended attribute holding a path's fsspec URL.
+pub const URL_XATTR: &str = "user.fsspec.url";
+
+#[cfg(target_os = "linux")]
+const NO_XATTR: i32 = libc::ENODATA;
+#[cfg(not(target_os = "linux"))]
+const NO_XATTR: i32 = libc::ENOATTR;
 
 /// A file open for writing. The whole file is held in memory and written back to the
 /// filesystem when the file is flushed, synced, or closed.
@@ -60,6 +68,20 @@ fn child(parent: &str, name: &str) -> String {
         format!("{parent}{name}")
     } else {
         format!("{parent}/{name}")
+    }
+}
+
+/// The URL of `rel` below the mount's source URL `base`. In a chained URL the path goes on
+/// the outermost filesystem, so `dataview::file:///data` gives
+/// `dataview://a.parquet::file:///data` for `a.parquet`.
+pub fn source_url(base: &str, rel: &str) -> String {
+    if rel.is_empty() {
+        return base.to_string();
+    }
+    match base.split_once("::") {
+        Some((outer, inner)) if outer.contains("://") => format!("{}::{inner}", child(outer, rel)),
+        Some((outer, inner)) => format!("{outer}://{rel}::{inner}"),
+        None => child(base, rel),
     }
 }
 
@@ -164,6 +186,7 @@ pub struct FsspecFuse {
     /// object stores where a directory exists only while something is stored below it.
     local_dirs: Mutex<HashSet<String>>,
     next_handle: AtomicU64,
+    source_url: Option<String>,
 }
 
 impl FsspecFuse {
@@ -181,7 +204,28 @@ impl FsspecFuse {
             dirs: Mutex::new(HashMap::new()),
             local_dirs: Mutex::new(HashSet::new()),
             next_handle: AtomicU64::new(1),
+            source_url: None,
         }
+    }
+
+    /// The URL of the mount's root, from which each path's [`URL_XATTR`] is built.
+    pub fn source_url(mut self, url: impl Into<String>) -> Self {
+        self.source_url = Some(url.into());
+        self
+    }
+
+    /// The fsspec URL of `ino`, if the mount has a source URL.
+    pub fn url(&self, ino: INodeNo) -> Result<Option<String>, Errno> {
+        let Some(base) = &self.source_url else {
+            return Ok(None);
+        };
+        let root = self.path(INodeNo::ROOT)?;
+        let path = self.path(ino)?;
+        let rel = path
+            .strip_prefix(&root)
+            .unwrap_or(&path)
+            .trim_start_matches('/');
+        Ok(Some(source_url(base, rel)))
     }
 
     /// Whether the mount rejects changes with `EROFS`. True by default.
@@ -872,8 +916,38 @@ impl Filesystem for FsspecFuse {
         }
     }
 
+    fn getxattr(&self, _req: &Request, ino: INodeNo, name: &OsStr, size: u32, reply: ReplyXattr) {
+        if name != URL_XATTR {
+            return reply.error(Errno::from_i32(NO_XATTR));
+        }
+        match self.url(ino) {
+            Ok(Some(url)) => xattr_reply(reply, url.as_bytes(), size),
+            Ok(None) => reply.error(Errno::from_i32(NO_XATTR)),
+            Err(error) => reply.error(error),
+        }
+    }
+
+    fn listxattr(&self, _req: &Request, ino: INodeNo, size: u32, reply: ReplyXattr) {
+        match self.url(ino) {
+            Ok(Some(_)) => xattr_reply(reply, format!("{URL_XATTR}\0").as_bytes(), size),
+            Ok(None) => xattr_reply(reply, b"", size),
+            Err(error) => reply.error(error),
+        }
+    }
+
     fn statfs(&self, _req: &Request, _ino: INodeNo, reply: ReplyStatfs) {
         reply.statfs(0, 0, 0, 0, 0, 4096, 255, 4096);
+    }
+}
+
+/// Sends `value`, or its length when the caller asked with `size` 0.
+fn xattr_reply(reply: ReplyXattr, value: &[u8], size: u32) {
+    if size == 0 {
+        reply.size(value.len() as u32);
+    } else if value.len() > size as usize {
+        reply.error(Errno::ERANGE);
+    } else {
+        reply.data(value);
     }
 }
 
@@ -899,12 +973,18 @@ pub fn spawn_mount(
     mountpoint: &Path,
     config: &Config,
 ) -> io::Result<BackgroundSession> {
+    spawn(FsspecFuse::new(fs, root), mountpoint, config)
+}
+
+/// Mounts `fuse` at `mountpoint` on background threads, read-only when `config` has
+/// [`MountOption::RO`]. Dropping the returned session unmounts it.
+pub fn spawn(
+    fuse: FsspecFuse,
+    mountpoint: &Path,
+    config: &Config,
+) -> io::Result<BackgroundSession> {
     let read_only = config.mount_options.contains(&MountOption::RO);
-    fuser::spawn_mount(
-        FsspecFuse::new(fs, root).read_only(read_only),
-        mountpoint,
-        config,
-    )
+    fuser::spawn_mount(fuse.read_only(read_only), mountpoint, config)
 }
 
 #[cfg(test)]

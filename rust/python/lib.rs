@@ -63,29 +63,31 @@ fn mount(
     let options: FsOptions = storage_options.unwrap_or_default().into_iter().collect();
     let (fs, root) = fsspec_rs::url_to_fs(url, &options).map_err(fs_error)?;
     let config = ::fsspec_fuse::config(url, threads, read_only);
-    let session = py.detach(|| ::fsspec_fuse::spawn_mount(fs, root, &mountpoint, &config))?;
+    let fuse = ::fsspec_fuse::FsspecFuse::new(fs, root).source_url(url);
+    let session = py.detach(|| ::fsspec_fuse::spawn(fuse, &mountpoint, &config))?;
     Ok(RustMount {
         session: Mutex::new(Some(session)),
     })
 }
 
 /// Mounts `root` of the Python fsspec filesystem `fs` at `mountpoint` and returns the
-/// session.
+/// session. `source_url` is the URL of `root`, reported in each path's `user.fsspec.url`.
 #[pyfunction]
-#[pyo3(signature = (fs, root, mountpoint, threads = 4, read_only = true))]
+#[pyo3(signature = (fs, root, mountpoint, source_url, threads = 4, read_only = true))]
 fn mount_filesystem(
     py: Python<'_>,
     fs: Py<PyAny>,
     root: &str,
     mountpoint: PathBuf,
+    source_url: String,
     threads: usize,
     read_only: bool,
 ) -> PyResult<RustMount> {
     let fs = fsspec_rs_bridge::PyFsspecFs::from_py_fs(fs).map_err(fs_error)?;
     let config = ::fsspec_fuse::config(fs.source_protocol(), threads, read_only);
     let fs: SharedFileSystem = Arc::new(fs);
-    let root = root.to_string();
-    let session = py.detach(|| ::fsspec_fuse::spawn_mount(fs, root, &mountpoint, &config))?;
+    let fuse = ::fsspec_fuse::FsspecFuse::new(fs, root).source_url(source_url);
+    let session = py.detach(|| ::fsspec_fuse::spawn(fuse, &mountpoint, &config))?;
     Ok(RustMount {
         session: Mutex::new(Some(session)),
     })

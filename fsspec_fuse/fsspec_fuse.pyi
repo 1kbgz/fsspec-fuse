@@ -16,6 +16,7 @@ def mount_filesystem(
     fs: object,
     root: str,
     mountpoint: str | os.PathLike[str],
+    source_url: str,
     threads: int = 4,
     read_only: bool = True,
 ) -> RustMount: ...
