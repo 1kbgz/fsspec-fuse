@@ -544,9 +544,18 @@ window.runMermaid = runMermaid;</script>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">weakref</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Self</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">.fsspec_fuse</span><span class="w"> </span><span class="kn">import</span> <span class="n">RustMount</span><span class="p">,</span> <span class="n">mount</span> <span class="k">as</span> <span class="n">_mount</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fsspec</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractFileSystem</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fsspec.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">url_to_fs</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.fsspec_fuse</span><span class="w"> </span><span class="kn">import</span> <span class="n">RustMount</span><span class="p">,</span> <span class="n">mount</span> <span class="k">as</span> <span class="n">_mount</span><span class="p">,</span> <span class="n">mount_filesystem</span> <span class="k">as</span> <span class="n">_mount_filesystem</span>
+
+<span class="n">URL_XATTR</span> <span class="o">=</span> <span class="s2">"user.fsspec.url"</span>
+
+<span class="c1"># Mounts made in this process by real mountpoint, so resolve() can return their filesystems.</span>
+<span class="n">_MOUNTS</span><span class="p">:</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakValueDictionary</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mount</span><span class="p">]</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakValueDictionary</span><span class="p">()</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_option</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -562,10 +571,32 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">"""A mount of an fsspec URL. Unmounts on ``unmount()``, on context exit, or when</span>
 <span class="sd">    garbage collected."""</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">RustMount</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">AbstractFileSystem</span><span class="p">,</span>
+        <span class="n">mountpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">session</span><span class="p">:</span> <span class="n">RustMount</span><span class="p">,</span>
+        <span class="n">fs</span><span class="p">:</span> <span class="n">AbstractFileSystem</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">root</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+        <span class="n">storage_options</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mountpoint</span> <span class="o">=</span> <span class="n">mountpoint</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fs</span> <span class="o">=</span> <span class="n">fs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_root</span> <span class="o">=</span> <span class="n">root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage_options</span> <span class="o">=</span> <span class="n">storage_options</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">_MOUNTS</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">mountpoint</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span>
+
+<div class="viewcode-block" id="Mount.filesystem">
+<a class="viewcode-back" href="../../docs/src/api.html#fsspec_fuse.Mount.filesystem">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filesystem</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">AbstractFileSystem</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The Python fsspec filesystem behind the mount and the path of its root. A URL</span>
+<span class="sd">        mount opens its URL with Python fsspec the first time this is called."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_root</span> <span class="o">=</span> <span class="n">url_to_fs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_storage_options</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_root</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">mounted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -594,7 +625,15 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="mount">
 <a class="viewcode-back" href="../../docs/src/api.html#fsspec_fuse.mount">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">mount</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">threads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">read_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">storage_options</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mount</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mount</span><span class="p">(</span>
+    <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">AbstractFileSystem</span><span class="p">,</span>
+    <span class="n">mountpoint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">threads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="n">read_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">storage_options</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mount</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Mount ``url`` at the existing directory ``mountpoint``.</span>
 
 <span class="sd">    The URL resolves through the fsspec-rs registry shared by every extension in the</span>
@@ -602,13 +641,55 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    when their packages are imported, and any Python fsspec backend otherwise.</span>
 <span class="sd">    ``threads`` sets how many requests the mount serves at once.</span>
 
+<span class="sd">    ``url`` may also be a Python fsspec filesystem, mounted from ``path``, or a chained URL</span>
+<span class="sd">    such as ``dataview::s3://bucket/data``, which Python fsspec opens with</span>
+<span class="sd">    ``storage_options`` as given (for example ``dataview={"mapping": {...}}``).</span>
+
 <span class="sd">    With ``read_only=False`` the mount accepts changes. A file opened for writing is</span>
 <span class="sd">    held in memory and written to the filesystem when it is flushed or closed, so a</span>
 <span class="sd">    failed upload surfaces as an error from ``close()``.</span>
 <span class="sd">    """</span>
     <span class="n">mountpoint</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fspath</span><span class="p">(</span><span class="n">mountpoint</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">"::"</span> <span class="ow">in</span> <span class="n">url</span><span class="p">:</span>
+        <span class="n">fs</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">url_to_fs</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">storage_options</span><span class="p">)</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">_mount_filesystem</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">threads</span><span class="p">,</span> <span class="n">read_only</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Mount</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">AbstractFileSystem</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">storage_options</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"storage options apply to URLs, not filesystem objects"</span><span class="p">)</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">_mount_filesystem</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">,</span> <span class="n">url</span><span class="o">.</span><span class="n">unstrip_protocol</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">threads</span><span class="p">,</span> <span class="n">read_only</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Mount</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"path applies to filesystem objects; put it in the URL"</span><span class="p">)</span>
     <span class="n">options</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">_option</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">storage_options</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-    <span class="k">return</span> <span class="n">Mount</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">,</span> <span class="n">_mount</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">threads</span><span class="p">,</span> <span class="n">read_only</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="n">Mount</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">,</span> <span class="n">_mount</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">threads</span><span class="p">,</span> <span class="n">read_only</span><span class="p">),</span> <span class="n">storage_options</span><span class="o">=</span><span class="n">storage_options</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="resolve">
+<a class="viewcode-back" href="../../docs/src/api.html#fsspec_fuse.resolve">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">AbstractFileSystem</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The fsspec filesystem and path behind ``path`` on a mount.</span>
+
+<span class="sd">    A mount made in this process resolves to the filesystem it mounted, with its storage</span>
+<span class="sd">    options. Other mounts resolve through the path's ``user.fsspec.url`` attribute (Linux</span>
+<span class="sd">    only), opened without storage options. Raises ``ValueError`` for a path on no mount.</span>
+<span class="sd">    """</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_MOUNTS</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">mount</span> <span class="o">=</span> <span class="n">_MOUNTS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mount</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">mount</span><span class="o">.</span><span class="n">mounted</span> <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="n">path</span> <span class="o">==</span> <span class="n">point</span> <span class="ow">or</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">point</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)):</span>
+            <span class="k">continue</span>
+        <span class="n">fs</span><span class="p">,</span> <span class="n">root</span> <span class="o">=</span> <span class="n">mount</span><span class="o">.</span><span class="n">filesystem</span><span class="p">()</span>
+        <span class="n">rel</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">point</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rel</span> <span class="o">==</span> <span class="s2">"."</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fs</span><span class="p">,</span> <span class="n">root</span>
+        <span class="k">return</span> <span class="n">fs</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">root</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">root</span> <span class="k">else</span> <span class="n">rel</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getxattr</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">URL_XATTR</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> is not on an fsspec mount"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+    <span class="k">return</span> <span class="n">url_to_fs</span><span class="p">(</span><span class="n">url</span><span class="p">)</span></div>
 
 </pre></div>
 

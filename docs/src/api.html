@@ -135,10 +135,16 @@
     <a href="#fsspec_fuse.Mount">Mount</a>
   </li>
   <li class="fd-toc-item" data-depth="2">
+    <a href="#fsspec_fuse.Mount.filesystem">Mount.filesystem()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="2">
     <a href="#fsspec_fuse.Mount.mounted">Mount.mounted</a>
   </li>
   <li class="fd-toc-item" data-depth="2">
     <a href="#fsspec_fuse.Mount.unmount">Mount.unmount()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
+    <a href="#fsspec_fuse.resolve">resolve()</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
     <a href="#fsspec_fuse.linked_to_libfsspec">linked_to_libfsspec()</a>
@@ -160,19 +166,25 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#fsspec_fuse.Mount" title="fsspec_fuse.Mount"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Mount</span></code></a></p></td>
 <td><p>A mount of an fsspec URL.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#fsspec_fuse.linked_to_libfsspec" title="fsspec_fuse.linked_to_libfsspec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linked_to_libfsspec</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#fsspec_fuse.resolve" title="fsspec_fuse.resolve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resolve</span></code></a></p></td>
+<td><p>The fsspec filesystem and path behind <code class="docutils literal notranslate"><span class="pre">path</span></code> on a mount.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#fsspec_fuse.linked_to_libfsspec" title="fsspec_fuse.linked_to_libfsspec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linked_to_libfsspec</span></code></a></p></td>
 <td><p>Whether this extension resolves URLs through the shared <cite>libfsspec</cite>.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py function">
 <dt class="sig sig-object py" id="fsspec_fuse.mount">
-<span class="sig-prename descclassname"><span class="pre">fsspec_fuse.</span></span><span class="sig-name descname"><span class="pre">mount</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mountpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">PathLike</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">threads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">storage_options</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fsspec_fuse.Mount" title="fsspec_fuse.mount.Mount"><span class="pre">Mount</span></a></span></span><a class="reference internal" href="../../_modules/fsspec_fuse/mount.html#mount"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fsspec_fuse.mount" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">fsspec_fuse.</span></span><span class="sig-name descname"><span class="pre">mount</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">AbstractFileSystem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mountpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">PathLike</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">storage_options</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#fsspec_fuse.Mount" title="fsspec_fuse.mount.Mount"><span class="pre">Mount</span></a></span></span><a class="reference internal" href="../../_modules/fsspec_fuse/mount.html#mount"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fsspec_fuse.mount" title="Link to this definition">¶</a></dt>
 <dd><p>Mount <code class="docutils literal notranslate"><span class="pre">url</span></code> at the existing directory <code class="docutils literal notranslate"><span class="pre">mountpoint</span></code>.</p>
 <p>The URL resolves through the fsspec-rs registry shared by every extension in the
 process: native backends such as <code class="docutils literal notranslate"><span class="pre">file://</span></code>, <code class="docutils literal notranslate"><span class="pre">s3://</span></code>, <code class="docutils literal notranslate"><span class="pre">db+sqlite://</span></code>, or <code class="docutils literal notranslate"><span class="pre">kafka://</span></code>
 when their packages are imported, and any Python fsspec backend otherwise.
 <code class="docutils literal notranslate"><span class="pre">threads</span></code> sets how many requests the mount serves at once.</p>
+<p><code class="docutils literal notranslate"><span class="pre">url</span></code> may also be a Python fsspec filesystem, mounted from <code class="docutils literal notranslate"><span class="pre">path</span></code>, or a chained URL
+such as <code class="docutils literal notranslate"><span class="pre">dataview::s3://bucket/data</span></code>, which Python fsspec opens with
+<code class="docutils literal notranslate"><span class="pre">storage_options</span></code> as given (for example <code class="docutils literal notranslate"><span class="pre">dataview={&quot;mapping&quot;:</span> <span class="pre">{...}}</span></code>).</p>
 <p>With <code class="docutils literal notranslate"><span class="pre">read_only=False</span></code> the mount accepts changes. A file opened for writing is
 held in memory and written to the filesystem when it is flushed or closed, so a
 failed upload surfaces as an error from <code class="docutils literal notranslate"><span class="pre">close()</span></code>.</p>
@@ -180,10 +192,17 @@ failed upload surfaces as an error from <code class="docutils literal notranslat
 
 <dl class="py class">
 <dt class="sig sig-object py" id="fsspec_fuse.Mount">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fsspec_fuse.</span></span><span class="sig-name descname"><span class="pre">Mount</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mountpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">RustMount</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/fsspec_fuse/mount.html#Mount"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fsspec_fuse.Mount" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">fsspec_fuse.</span></span><span class="sig-name descname"><span class="pre">Mount</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">AbstractFileSystem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mountpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">RustMount</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AbstractFileSystem</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/fsspec_fuse/mount.html#Mount"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fsspec_fuse.Mount" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A mount of an fsspec URL. Unmounts on <code class="docutils literal notranslate"><span class="pre">unmount()</span></code>, on context exit, or when
 garbage collected.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="fsspec_fuse.Mount.filesystem">
+<span class="sig-name descname"><span class="pre">filesystem</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">AbstractFileSystem</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/fsspec_fuse/mount.html#Mount.filesystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fsspec_fuse.Mount.filesystem" title="Link to this definition">¶</a></dt>
+<dd><p>The Python fsspec filesystem behind the mount and the path of its root. A URL
+mount opens its URL with Python fsspec the first time this is called.</p>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="fsspec_fuse.Mount.mounted">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mounted</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#fsspec_fuse.Mount.mounted" title="Link to this definition">¶</a></dt>
@@ -197,6 +216,15 @@ unmount from outside, such as <code class="docutils literal notranslate"><span c
 <dd><p>Unmount and wait for the mount’s threads to stop. Calling it again does nothing.</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fsspec_fuse.resolve">
+<span class="sig-prename descclassname"><span class="pre">fsspec_fuse.</span></span><span class="sig-name descname"><span class="pre">resolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">PathLike</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">AbstractFileSystem</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/fsspec_fuse/mount.html#resolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fsspec_fuse.resolve" title="Link to this definition">¶</a></dt>
+<dd><p>The fsspec filesystem and path behind <code class="docutils literal notranslate"><span class="pre">path</span></code> on a mount.</p>
+<p>A mount made in this process resolves to the filesystem it mounted, with its storage
+options. Other mounts resolve through the path’s <code class="docutils literal notranslate"><span class="pre">user.fsspec.url</span></code> attribute (Linux
+only), opened without storage options. Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for a path on no mount.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -247,10 +275,16 @@ unmount from outside, such as <code class="docutils literal notranslate"><span c
     <a href="#fsspec_fuse.Mount">Mount</a>
   </li>
   <li class="fd-toc-item" data-depth="2">
+    <a href="#fsspec_fuse.Mount.filesystem">Mount.filesystem()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="2">
     <a href="#fsspec_fuse.Mount.mounted">Mount.mounted</a>
   </li>
   <li class="fd-toc-item" data-depth="2">
     <a href="#fsspec_fuse.Mount.unmount">Mount.unmount()</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
+    <a href="#fsspec_fuse.resolve">resolve()</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
     <a href="#fsspec_fuse.linked_to_libfsspec">linked_to_libfsspec()</a>

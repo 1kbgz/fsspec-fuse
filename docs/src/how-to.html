@@ -141,6 +141,12 @@
     <a href="#mount-a-backend-that-only-exists-in-python">Mount a backend that only exists in Python</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
+    <a href="#mount-a-filesystem-object-or-a-chained-url">Mount a filesystem object or a chained URL</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
+    <a href="#find-where-a-mounted-file-comes-from">Find where a mounted file comes from</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
     <a href="#write-to-a-mount">Write to a mount</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
@@ -214,6 +220,49 @@ with gcsfs:</p>
 </pre></div>
 </div>
 <p>Storage options reach the Python backend as strings.</p>
+</section>
+<section id="mount-a-filesystem-object-or-a-chained-url">
+<h2>Mount a filesystem object or a chained URL<a class="headerlink" href="#mount-a-filesystem-object-or-a-chained-url" title="Link to this heading">¶</a></h2>
+<p>Pass a Python fsspec filesystem instead of a URL, with <code class="docutils literal notranslate"><span class="pre">path</span></code> naming the directory to
+mount:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">fsspec</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">fsspec_fuse</span><span class="w"> </span><span class="kn">import</span> <span class="n">mount</span>
+
+<span class="n">fs</span> <span class="o">=</span> <span class="n">fsspec</span><span class="o">.</span><span class="n">filesystem</span><span class="p">(</span><span class="s2">"memory"</span><span class="p">)</span>
+<span class="n">fs</span><span class="o">.</span><span class="n">pipe_file</span><span class="p">(</span><span class="s2">"/reports/2026.csv"</span><span class="p">,</span> <span class="sa">b</span><span class="s2">"a,b</span><span class="se">\n</span><span class="s2">1,2</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">mount</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="s2">"/mnt/reports"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">"/reports"</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>A chained URL such as <code class="docutils literal notranslate"><span class="pre">simplecache::s3://warehouse/reports</span></code> is opened by Python fsspec, so
+its storage options can be any Python value. A data view from fsspec-data mounts this way,
+with its mapping as an option:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">mount</span><span class="p">(</span>
+    <span class="s2">"dataview::s3://warehouse/reports"</span><span class="p">,</span>
+    <span class="s2">"/mnt/reports"</span><span class="p">,</span>
+    <span class="n">dataview</span><span class="o">=</span><span class="p">{</span><span class="s2">"mapping"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"table"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"raw"</span><span class="p">,</span> <span class="s2">"parquet"</span><span class="p">],</span> <span class="s2">"schema"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"json"</span><span class="p">]}},</span>
+    <span class="n">s3</span><span class="o">=</span><span class="p">{</span><span class="s2">"anon"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+<span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+</section>
+<section id="find-where-a-mounted-file-comes-from">
+<h2>Find where a mounted file comes from<a class="headerlink" href="#find-where-a-mounted-file-comes-from" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">resolve</span></code> returns the fsspec filesystem and path behind a file on a mount, so a program can
+work with the source instead of the mounted copy:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">fsspec_fuse</span><span class="w"> </span><span class="kn">import</span> <span class="n">mount</span><span class="p">,</span> <span class="n">resolve</span>
+
+<span class="k">with</span> <span class="n">mount</span><span class="p">(</span><span class="s2">"s3://warehouse/reports"</span><span class="p">,</span> <span class="s2">"/mnt/reports"</span><span class="p">,</span> <span class="n">anon</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">fs</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">resolve</span><span class="p">(</span><span class="s2">"/mnt/reports/2026.parquet"</span><span class="p">)</span>
+    <span class="c1"># fs is an S3 filesystem and path is "warehouse/reports/2026.parquet"</span>
+</pre></div>
+</div>
+<p>From another process on Linux, read the URL from the file’s extended attribute:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">getfattr -n user.fsspec.url /mnt/reports/2026.parquet</span>
+</pre></div>
+</div>
 </section>
 <section id="write-to-a-mount">
 <h2>Write to a mount<a class="headerlink" href="#write-to-a-mount" title="Link to this heading">¶</a></h2>
@@ -297,6 +346,12 @@ the backend has high latency:</p>
   </li>
   <li class="fd-toc-item" data-depth="1">
     <a href="#mount-a-backend-that-only-exists-in-python">Mount a backend that only exists in Python</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
+    <a href="#mount-a-filesystem-object-or-a-chained-url">Mount a filesystem object or a chained URL</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
+    <a href="#find-where-a-mounted-file-comes-from">Find where a mounted file comes from</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
     <a href="#write-to-a-mount">Write to a mount</a>

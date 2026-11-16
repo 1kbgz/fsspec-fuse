@@ -135,6 +135,9 @@
     <a href="#attributes">Attributes</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
+    <a href="#source-urls">Source URLs</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
     <a href="#errors">Errors</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
@@ -287,6 +290,21 @@ directory <code class="docutils literal notranslate"><span class="pre">EISDIR</s
 </table>
 <p>The kernel caches attributes and lookups for 1 second.</p>
 </section>
+<section id="source-urls">
+<h2>Source URLs<a class="headerlink" href="#source-urls" title="Link to this heading">¶</a></h2>
+<p>Every file and directory has the extended attribute <code class="docutils literal notranslate"><span class="pre">user.fsspec.url</span></code> (<code class="docutils literal notranslate"><span class="pre">URL_XATTR</span></code>), the
+fsspec URL it comes from: the mounted URL with the path below the mount appended. A chained
+URL puts the path on its outermost filesystem, so <code class="docutils literal notranslate"><span class="pre">a.parquet</span></code> on a mount of
+<code class="docutils literal notranslate"><span class="pre">dataview::file:///data</span></code> reports <code class="docutils literal notranslate"><span class="pre">dataview://a.parquet::file:///data</span></code>. A mounted filesystem
+object reports its <code class="docutils literal notranslate"><span class="pre">unstrip_protocol</span></code> URL, which leaves out what a wrapping filesystem
+wraps; <code class="docutils literal notranslate"><span class="pre">resolve</span></code> in the mounting process returns the object itself. Other attribute names return <code class="docutils literal notranslate"><span class="pre">ENODATA</span></code>
+(<code class="docutils literal notranslate"><span class="pre">ENOATTR</span></code> on macOS), and attributes cannot be set.</p>
+<p><code class="docutils literal notranslate"><span class="pre">resolve(path)</span></code> returns the fsspec filesystem and path behind a local path. Mounts made in
+the same process return the filesystem they mounted, with its storage options; a URL mount
+opens its URL with Python fsspec on first use. Other mounts resolve through
+<code class="docutils literal notranslate"><span class="pre">user.fsspec.url</span></code> on Linux, without storage options. A path on no mount raises
+<code class="docutils literal notranslate"><span class="pre">ValueError</span></code>.</p>
+</section>
 <section id="errors">
 <h2>Errors<a class="headerlink" href="#errors" title="Link to this heading">¶</a></h2>
 <table class="docutils align-default">
@@ -388,6 +406,9 @@ mount that visits many paths keeps a growing table for its lifetime.</p>
   </li>
   <li class="fd-toc-item" data-depth="1">
     <a href="#attributes">Attributes</a>
+  </li>
+  <li class="fd-toc-item" data-depth="1">
+    <a href="#source-urls">Source URLs</a>
   </li>
   <li class="fd-toc-item" data-depth="1">
     <a href="#errors">Errors</a>
