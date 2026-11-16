@@ -3,7 +3,10 @@ from __future__ import annotations
 import os
 from typing import Self
 
-from .fsspec_fuse import RustMount, mount as _mount
+from fsspec import AbstractFileSystem
+from fsspec.core import url_to_fs
+
+from .fsspec_fuse import RustMount, mount as _mount, mount_filesystem as _mount_filesystem
 
 
 def _option(value: object) -> str:
@@ -17,7 +20,7 @@ class Mount:
     """A mount of an fsspec URL. Unmounts on ``unmount()``, on context exit, or when
     garbage collected."""
 
-    def __init__(self, url: str, mountpoint: str, session: RustMount):
+    def __init__(self, url: str | AbstractFileSystem, mountpoint: str, session: RustMount):
         self.url = url
         self.mountpoint = mountpoint
         self._session = session
@@ -43,7 +46,15 @@ class Mount:
         return f"Mount({self.url!r}, {self.mountpoint!r}, {state})"
 
 
-def mount(url: str, mountpoint: str | os.PathLike[str], *, threads: int = 4, read_only: bool = True, **storage_options) -> Mount:
+def mount(
+    url: str | AbstractFileSystem,
+    mountpoint: str | os.PathLike[str],
+    *,
+    path: str = "",
+    threads: int = 4,
+    read_only: bool = True,
+    **storage_options,
+) -> Mount:
     """Mount ``url`` at the existing directory ``mountpoint``.
 
     The URL resolves through the fsspec-rs registry shared by every extension in the
@@ -51,10 +62,23 @@ def mount(url: str, mountpoint: str | os.PathLike[str], *, threads: int = 4, rea
     when their packages are imported, and any Python fsspec backend otherwise.
     ``threads`` sets how many requests the mount serves at once.
 
+    ``url`` may also be a Python fsspec filesystem, mounted from ``path``, or a chained URL
+    such as ``dataview::s3://bucket/data``, which Python fsspec opens with
+    ``storage_options`` as given (for example ``dataview={"mapping": {...}}``).
+
     With ``read_only=False`` the mount accepts changes. A file opened for writing is
     held in memory and written to the filesystem when it is flushed or closed, so a
     failed upload surfaces as an error from ``close()``.
     """
     mountpoint = os.fspath(mountpoint)
+    if isinstance(url, str) and "::" in url:
+        fs, path = url_to_fs(url, **storage_options)
+        return Mount(url, mountpoint, _mount_filesystem(fs, path, mountpoint, threads, read_only))
+    if isinstance(url, AbstractFileSystem):
+        if storage_options:
+            raise TypeError("storage options apply to URLs, not filesystem objects")
+        return Mount(url, mountpoint, _mount_filesystem(url, path, mountpoint, threads, read_only))
+    if path:
+        raise TypeError("path applies to filesystem objects; put it in the URL")
     options = {key: _option(value) for key, value in storage_options.items()}
     return Mount(url, mountpoint, _mount(url, mountpoint, options, threads, read_only))
