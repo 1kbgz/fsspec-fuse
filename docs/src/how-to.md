@@ -69,6 +69,36 @@ fsspec-fuse gcs://my-public-bucket/data /mnt/data -o token=anon
 
 Storage options reach the Python backend as strings.
 
+## Mount a filesystem object or a chained URL
+
+Pass a Python fsspec filesystem instead of a URL, with `path` naming the directory to
+mount:
+
+```python
+import fsspec
+
+from fsspec_fuse import mount
+
+fs = fsspec.filesystem("memory")
+fs.pipe_file("/reports/2026.csv", b"a,b\n1,2\n")
+with mount(fs, "/mnt/reports", path="/reports"):
+    ...
+```
+
+A chained URL such as `simplecache::s3://warehouse/reports` is opened by Python fsspec, so
+its storage options can be any Python value. A data view from fsspec-data mounts this way,
+with its mapping as an option:
+
+```python
+with mount(
+    "dataview::s3://warehouse/reports",
+    "/mnt/reports",
+    dataview={"mapping": {"table": ["raw", "parquet"], "schema": ["json"]}},
+    s3={"anon": True},
+):
+    ...
+```
+
 ## Write to a mount
 
 Pass `--writable` to create, change, rename, and delete files:

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::{Mutex, PoisonError};
+use std::sync::{Arc, Mutex, PoisonError};
 
-use fsspec_rs::{FsError, FsOptions};
+use fsspec_rs::{FsError, FsOptions, SharedFileSystem};
 use pyo3::exceptions::PyOSError;
 use pyo3::prelude::*;
 
@@ -69,6 +69,28 @@ fn mount(
     })
 }
 
+/// Mounts `root` of the Python fsspec filesystem `fs` at `mountpoint` and returns the
+/// session.
+#[pyfunction]
+#[pyo3(signature = (fs, root, mountpoint, threads = 4, read_only = true))]
+fn mount_filesystem(
+    py: Python<'_>,
+    fs: Py<PyAny>,
+    root: &str,
+    mountpoint: PathBuf,
+    threads: usize,
+    read_only: bool,
+) -> PyResult<RustMount> {
+    let fs = fsspec_rs_bridge::PyFsspecFs::from_py_fs(fs).map_err(fs_error)?;
+    let config = ::fsspec_fuse::config(fs.source_protocol(), threads, read_only);
+    let fs: SharedFileSystem = Arc::new(fs);
+    let root = root.to_string();
+    let session = py.detach(|| ::fsspec_fuse::spawn_mount(fs, root, &mountpoint, &config))?;
+    Ok(RustMount {
+        session: Mutex::new(Some(session)),
+    })
+}
+
 /// Whether this extension resolves URLs through the shared `libfsspec`.
 #[pyfunction]
 fn linked_to_libfsspec() -> bool {
@@ -83,6 +105,7 @@ fn fsspec_fuse(m: &Bound<PyModule>) -> PyResult<()> {
     fsspec_sys::use_shared_registry();
     m.add_class::<RustMount>()?;
     m.add_function(wrap_pyfunction!(mount, m)?)?;
+    m.add_function(wrap_pyfunction!(mount_filesystem, m)?)?;
     m.add_function(wrap_pyfunction!(linked_to_libfsspec, m)?)?;
     Ok(())
 }

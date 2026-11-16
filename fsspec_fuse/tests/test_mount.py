@@ -31,11 +31,11 @@ needs_fuse = pytest.mark.skipif(not _fuse_available(), reason="FUSE is not avail
 def mounted(tmp_path):
     mounts = []
 
-    def _mount(url, **storage_options):
+    def _mount(url, **options):
         point = tmp_path / f"mnt{len(mounts)}"
         point.mkdir()
         try:
-            session = mount(url, point, **storage_options)
+            session = mount(url, point, **options)
         except OSError as error:
             # Hosted macOS runners install macFUSE but cannot load its kernel extension.
             if sys.platform != "linux":
@@ -164,6 +164,40 @@ def test_mounts_a_python_only_backend(mounted):
         assert (point / "readme.txt").read_text() == "from python"
     finally:
         memory.rm(root, recursive=True)
+
+
+@needs_fuse
+def test_mounts_a_filesystem_object(mounted):
+    root = f"/{uuid.uuid4().hex}"
+    memory = MemoryFileSystem()
+    memory.pipe_file(f"{root}/data/values.csv", b"a,b\n1,2\n")
+    try:
+        point = mounted(memory, path=root)
+        assert os.listdir(point) == ["data"]
+        assert (point / "data" / "values.csv").read_bytes() == b"a,b\n1,2\n"
+        assert os.stat(point / "data" / "values.csv").st_size == 8
+    finally:
+        memory.rm(root, recursive=True)
+
+
+@needs_fuse
+def test_mounts_a_chained_url_through_python_fsspec(mounted, tmp_path):
+    root = f"/{uuid.uuid4().hex}"
+    memory = MemoryFileSystem()
+    memory.pipe_file(f"{root}/readme.txt", b"cached")
+    try:
+        point = mounted(f"simplecache::memory://{root}", simplecache={"cache_storage": str(tmp_path / "cache")})
+        assert (point / "readme.txt").read_bytes() == b"cached"
+        assert any((tmp_path / "cache").iterdir())
+    finally:
+        memory.rm(root, recursive=True)
+
+
+def test_path_and_storage_options_match_the_source_kind():
+    with pytest.raises(TypeError, match="storage options apply to URLs"):
+        mount(MemoryFileSystem(), "/nonexistent", region="x")
+    with pytest.raises(TypeError, match="path applies to filesystem objects"):
+        mount("memory://", "/nonexistent", path="/a")
 
 
 @needs_fuse

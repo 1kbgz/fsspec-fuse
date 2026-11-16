@@ -12,4 +12,11 @@ def mount(
     threads: int = 4,
     read_only: bool = True,
 ) -> RustMount: ...
+def mount_filesystem(
+    fs: object,
+    root: str,
+    mountpoint: str | os.PathLike[str],
+    threads: int = 4,
+    read_only: bool = True,
+) -> RustMount: ...
 def linked_to_libfsspec() -> bool: ...

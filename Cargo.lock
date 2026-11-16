@@ -300,21 +300,32 @@ version = "0.1.1"
 dependencies = [
  "fsspec_fuse",
  "fsspec_rs",
+ "fsspec_rs_bridge",
  "fsspec_sys",
  "pyo3",
 ]
 
 [[package]]
 name = "fsspec_rs"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "301674c14ab7af2554068c76add6e896704846ca3328b072072900302ee09c52"
+checksum = "d8b5a08f066af2023f4f835da8548d87b5488dc48a1c2b156c069f3c471a7f0f"
 dependencies = [
  "bytes",
  "object_store",
  "percent-encoding",
  "tokio",
  "url",
+]
+
+[[package]]
+name = "fsspec_rs_bridge"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc783df416c3af6f7c8b3b53def5d9f4433c67e78406770289a8878a905b6e45"
+dependencies = [
+ "fsspec_rs",
+ "pyo3",
 ]
 
 [[package]]
